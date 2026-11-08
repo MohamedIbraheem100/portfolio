@@ -98,3 +98,28 @@
     }
   }
 }
+
+/* Print (the /cv page and the CI-generated PDF): white paper, black ink, no chrome. */
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  header[class],
+  footer[class],
+  .print\:hidden {
+    display: none !important;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .text-dim {
+    color: #444 !important;
+  }
+}
