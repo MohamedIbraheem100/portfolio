@@ -10,8 +10,7 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://mohamedibrahim.is-a.dev",
   links: {
     github: "https://github.com/MohamedIbraheem100",
-    // TODO(content): public LinkedIn URL
-    linkedin: undefined as string | undefined,
+    linkedin: "https://www.linkedin.com/in/mohamed-ibrahim100",
     email: "mohamed.abdelwahed.ai@gmail.com",
   },
 } as const;

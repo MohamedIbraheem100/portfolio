@@ -56,6 +56,7 @@ const Project = z.object({
 const Education = z.object({ institution: text, degree: text, start: dateish, end: dateish });
 const SkillGroup = z.object({ group: text, items: z.array(text).min(1) });
 const Language = z.object({ language: text, level: text });
+const Certificate = z.object({ name: text, issuer: text, year: dateish });
 
 export const ResumeSchema = z.object({
   basics: Basics,
@@ -64,6 +65,7 @@ export const ResumeSchema = z.object({
   projects: z.array(Project).min(1),
   education: z.array(Education),
   skills: z.array(SkillGroup),
+  certificates: z.array(Certificate).default([]),
   languages: z.array(Language),
 });
 
