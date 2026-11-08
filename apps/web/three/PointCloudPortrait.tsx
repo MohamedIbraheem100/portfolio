@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -14,8 +14,8 @@ import type { PointData } from "@/lib/pcp3";
   soft field of dust in 1.6 s (points fade in as they travel, the whole cloud
   settles from a slight tilt), then the detector sweep and the box (handled by
   the wrapper). After that, the only motion answers the visitor: cursor
-  parallax up to 8 degrees, and points near the cursor drift toward it
-  (the hero sketch in the brief), all on the GPU.
+  parallax up to 8 degrees. (A cursor-drift effect was tried and removed: it
+  deformed the face.)
 */
 
 const VERT = /* glsl */ `
@@ -26,8 +26,6 @@ const VERT = /* glsl */ `
   uniform float uAssemble;
   uniform float uRelief;
   uniform float uBase;      // point diameter in device px for a mid-tone far point
-  uniform vec2 uMouse;      // cursor on the portrait plane, world units; far away when idle
-  uniform float uPull;      // 0..1 strength of the cursor drift
   varying float vDepth;
   varying float vLuma;
   varying float vAlpha;
@@ -37,12 +35,6 @@ const VERT = /* glsl */ `
     float t = easeOutCubic(clamp((uAssemble - stagger) / (1.0 - stagger), 0.0, 1.0));
     vec3 target = vec3(position.xy, (aDepth - 0.5) * uRelief);
     vec3 p = mix(aStart, target, t);
-    // Cursor drift: points within ~0.38 units lean toward the cursor, strongest at the centre.
-    vec2 toMouse = uMouse - p.xy;
-    float dist = length(toMouse);
-    float pull = smoothstep(0.38, 0.0, dist) * 0.09 * uPull * t;
-    p.xy += normalize(toMouse + 1e-5) * pull;
-    p.z += pull * 0.8;
     vDepth = aDepth;
     vLuma = aLuma;
     vAlpha = smoothstep(0.0, 0.45, t);   // fade in while travelling
@@ -74,7 +66,6 @@ const FRAG = /* glsl */ `
 
 const FOV = 32;
 const MAX_TILT = THREE.MathUtils.degToRad(8);
-const IDLE_MOUSE = new THREE.Vector2(99, 99);
 
 /** Deterministic PRNG (mulberry32): the same dust every visit. */
 function seeded(seed: number): () => number {
@@ -122,8 +113,6 @@ function buildScene(data: PointData) {
       uAssemble: { value: 0 },
       uRelief: { value: 0.35 },
       uBase: { value: 2 },
-      uMouse: { value: IDLE_MOUSE.clone() },
-      uPull: { value: 0 },
     },
   });
   return { geometry, material };
@@ -142,9 +131,6 @@ function Cloud({ data, parallax, onFirstFrame, onAssembled }: Props) {
   const group = useRef<THREE.Group>(null);
   const first = useRef(false);
   const tilt = useRef({ x: 0, y: 0 });
-  const mouseNdc = useRef<{ x: number; y: number } | null>(null);
-  const mouseWorld = useRef(new THREE.Vector2(99, 99));
-  const { gl } = useThree();
   const [{ geometry, material }] = useState(() => buildScene(data));
   // Per-frame uniform writes go through a ref: three.js objects are mutable by nature, and
   // the React Compiler only allows that outside render through refs.
@@ -163,36 +149,22 @@ function Cloud({ data, parallax, onFirstFrame, onAssembled }: Props) {
       .timeline({ delay: 0.1 })
       .to(material.uniforms.uAssemble, { value: 1, duration: 1.6, ease: "power3.out" }, 0)
       .to(g.rotation, { x: 0, y: 0, duration: 1.9, ease: "power3.out" }, 0)
-      .to(material.uniforms.uPull, { value: 1, duration: 0.6 }, 1.2)
       .call(() => onAssembled(Math.round(performance.now() - t0)), [], 1.7);
     return () => {
       tl.kill();
     };
   }, [material, onAssembled]);
 
-  // Pointer: parallax target (whole window) and drift target (canvas plane).
+  // Pointer: parallax target over the whole window (desktop only).
   useEffect(() => {
-    const el = gl.domElement;
+    if (!parallax) return;
     const onMove = (e: PointerEvent) => {
       tilt.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
       tilt.current.y = (e.clientY / window.innerHeight - 0.5) * 2;
-      const r = el.getBoundingClientRect();
-      const inside =
-        e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-      mouseNdc.current = inside
-        ? { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -(((e.clientY - r.top) / r.height) * 2 - 1) }
-        : null;
-    };
-    const onLeave = () => {
-      mouseNdc.current = null;
     };
     window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("blur", onLeave);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("blur", onLeave);
-    };
-  }, [gl]);
+    return () => window.removeEventListener("pointermove", onMove);
+  }, [parallax]);
 
   useEffect(
     () => () => {
@@ -214,17 +186,6 @@ function Cloud({ data, parallax, onFirstFrame, onAssembled }: Props) {
       g.rotation.y += (tilt.current.x * MAX_TILT - g.rotation.y) * 0.06;
       g.rotation.x += (tilt.current.y * MAX_TILT * 0.6 - g.rotation.x) * 0.06;
     }
-
-    // Cursor on the z=0 plane: NDC -> world through the camera's frustum at that distance.
-    const m = mouseNdc.current;
-    const cam = state.camera as THREE.PerspectiveCamera;
-    if (m && parallax) {
-      const halfH = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * cam.position.z;
-      mouseWorld.current.set(m.x * halfH * cam.aspect, m.y * halfH);
-    } else {
-      mouseWorld.current.lerp(IDLE_MOUSE, 0.1);
-    }
-    (u.uMouse.value as THREE.Vector2).lerp(mouseWorld.current, 0.18);
 
     if (!first.current) {
       first.current = true;

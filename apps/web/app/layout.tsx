@@ -40,9 +40,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${body.variable} ${mono.variable} ${arabic.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-night text-phosphor">
-        {/* Hero decision before first paint (W5): capable desktops skip the static still and get the
-            live point cloud straight away; everyone else keeps the still. Also preloads the points. */}
-        <Script id="hero-live" strategy="beforeInteractive">{`(function(){try{var m=window.matchMedia;if(m("(prefers-reduced-motion: reduce)").matches||m("(pointer: coarse)").matches)return;var c=document.createElement("canvas");if(!(c.getContext("webgl2")||c.getContext("webgl")))return;document.documentElement.classList.add("hero-live");var l=document.createElement("link");l.rel="preload";l.as="fetch";l.href="/portrait-40k.pcp3";l.crossOrigin="anonymous";document.head.appendChild(l);}catch(e){}})();`}</Script>
+        {/* Hero decision before first paint (W5): any WebGL device without reduced-motion skips the
+            static still and gets the live point cloud (desktop: 40k + parallax, touch: 20k, later
+            start). Reduced motion / no WebGL keep the still. Also preloads the point file. */}
+        <Script id="hero-live" strategy="beforeInteractive">{`(function(){try{var m=window.matchMedia;if(m("(prefers-reduced-motion: reduce)").matches)return;var c=document.createElement("canvas");if(!(c.getContext("webgl2")||c.getContext("webgl")))return;var h=document.documentElement;var t=m("(pointer: coarse)").matches;h.classList.add("hero-live");h.setAttribute("data-hero-mode",t?"touch":"desktop");var l=document.createElement("link");l.rel="preload";l.as="fetch";l.href=t?"/portrait-20k.pcp3":"/portrait-40k.pcp3";l.crossOrigin="anonymous";document.head.appendChild(l);}catch(e){}})();`}</Script>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-amber focus:px-3 focus:py-2 focus:text-night"
