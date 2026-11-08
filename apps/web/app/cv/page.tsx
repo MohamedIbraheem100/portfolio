@@ -3,15 +3,12 @@ import { cacheLife } from "next/cache";
 import { ButtonLink } from "@/components/ui/button-link";
 import { isTodo, loadResume, pendingContent, type Experience, type Project } from "@/lib/resume";
 import { site } from "@/lib/site";
+import { CV_PDF_URL } from "@/lib/cv";
 
 export const metadata: Metadata = {
   title: "CV",
   description: `CV of ${site.name}, ${site.role}.`,
 };
-
-/* Built in CI from this page (D14) and published as a rolling release asset. */
-export const CV_PDF_URL =
-  "https://github.com/MohamedIbraheem100/portfolio/releases/download/cv-latest/Mohamed-Ibrahim-CV.pdf";
 
 const show = (v: string | null | undefined): v is string => Boolean(v) && !isTodo(v);
 const period = (start: string, end: string | null) => {
