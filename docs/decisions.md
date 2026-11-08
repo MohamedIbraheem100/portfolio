@@ -47,9 +47,12 @@ Folded into CLAUDE.md once the list is complete.
 ## D7. Identity and domain
 - Official spelling everywhere: **Mohamed Ibrahim** (site, CV, JSON-LD, domain). GitHub display
   name to be aligned by the owner (handle MohamedIbraheem100 stays; display name is what shows).
-- Domain: `mohamedibrahim.is-a.dev` (checked free on 2026-11-07). PR to is-a-dev/register opens the
-  same day the first Vercel deploy is live. Site ships on `.vercel.app` until approval; no code
-  change when the domain lands. Paid `.dev` domain can replace it later the same way.
+- Domain: `mohamedibrahim.is-a.dev` (checked free on 2026-11-07). Site ships on `.vercel.app` until
+  approval; no code change when the domain lands. Paid `.dev` domain can replace it later the same way.
+- Amended 2026-11-08: is-a.dev's PR template requires the site to be "reachable and completed" and
+  rejects placeholder pages, so the register PR opens at the end of W1 (content-first site), not W0.
+  The two JSON files (A record 216.198.79.1 + Vercel TXT verification) are ready on the fork branch
+  `MohamedIbraheem100/register:mohamedibrahim`; the domain is already added to the Vercel web project.
 - is-a.dev is acceptable on the CV.
 
 ## D8. Motion stack stays as planned (owner's call), with guardrails
@@ -130,5 +133,8 @@ Folded into CLAUDE.md once the list is complete.
 
 ## D25. Lighthouse CI runs against a local production build in GitHub Actions
 - `next build` + `next start` inside the workflow; no dependency on Vercel preview timing.
-- Vercel project names: `mohamedibrahim` (web) and `mohamedibrahim-api` (api), imported by the owner
-  from the Vercel dashboard with root directories apps/web and apps/api.
+- Vercel projects (renamed 2026-11-08, `mohamedibrahim` was taken): `mohamedibrahim-ai` (web, root
+  apps/web) and `mohamedibrahim-ai-api` (api, root apps/api, framework Other). Production URLs:
+  https://mohamedibrahim-ai.vercel.app and https://mohamedibrahim-ai-api.vercel.app.
+- Lesson: renaming a Vercel project does not change its `.vercel.app` domain; add the new domain under
+  Settings > Domains. `DEPLOYMENT_NOT_FOUND` on a `.vercel.app` host means the name is unassigned.
