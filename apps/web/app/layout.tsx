@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/ui/site-header";
 import { SiteFooter } from "@/components/ui/site-footer";
 import { PersonJsonLd } from "@/components/seo/person-jsonld";
 import { SmoothScroll } from "@/components/motion/smooth-scroll";
+import { SiteField } from "@/components/motion/site-field";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${display.variable} ${body.variable} ${mono.variable} ${arabic.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col bg-night text-phosphor">
+      <body className="flex min-h-full flex-col text-phosphor">
         {/* Hero decision before first paint (W5): any WebGL device without reduced-motion skips the
             static still and gets the live point cloud (desktop: 40k + parallax, touch: 20k, later
             start). Reduced motion / no WebGL keep the still. Also preloads the point file. */}
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
+        <SiteField />
         <SiteHeader />
         <main id="main" className="flex flex-1 flex-col">
           {children}

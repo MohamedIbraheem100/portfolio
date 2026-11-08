@@ -34,7 +34,12 @@ export function HowIBuild() {
       <h2 id="process-heading" className="font-display text-h3 font-medium text-dim">
         How I build
       </h2>
-      <ol className="mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-box bg-phosphor/10 md:grid-cols-4">
+      <div className="relative mt-8">
+        {/* Signal travelling along the loop, same language as the background pulses. */}
+        <span aria-hidden="true" className="process-wire pointer-events-none absolute left-0 right-0 top-0 hidden h-px md:block">
+          <span className="process-pulse absolute top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-amber" />
+        </span>
+      <ol className="grid grid-cols-1 gap-px overflow-hidden rounded-box bg-phosphor/10 md:grid-cols-4">
         {STAGES.map((s, i) => (
           <li key={s.name} className="relative bg-night p-6 md:p-7">
             <span aria-hidden="true" className="absolute left-0 top-6 h-6 w-0.5 bg-amber md:top-7" />
@@ -50,6 +55,7 @@ export function HowIBuild() {
           </li>
         ))}
       </ol>
+      </div>
     </section>
   );
 }

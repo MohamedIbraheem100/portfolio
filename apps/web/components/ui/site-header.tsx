@@ -16,10 +16,10 @@ export function SiteHeader() {
           {site.name}
         </Link>
         <nav aria-label="Primary" className="flex items-center gap-5 md:gap-7">
-          <Link href="/#work" className="text-small text-dim hover:text-amber md:text-body">
+          <Link href="/#work" className="nav-link text-small text-dim hover:text-amber md:text-body">
             Work
           </Link>
-          <Link href="/#contact" className="text-small text-dim hover:text-amber md:text-body">
+          <Link href="/#contact" className="nav-link text-small text-dim hover:text-amber md:text-body">
             Contact
           </Link>
           <ButtonLink href="/cv" variant="quiet">

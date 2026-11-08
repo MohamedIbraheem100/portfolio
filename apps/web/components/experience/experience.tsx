@@ -1,4 +1,5 @@
 import { isTodo, type Experience as Job, type Resume } from "@/lib/resume";
+import { TimelineRule } from "@/components/experience/timeline-rule";
 
 /*
   Experience: a timeline of impact, not duties (CLAUDE.md). Period on the left,
@@ -46,11 +47,14 @@ export function Experience({ resume }: { resume: Resume }) {
       <h2 id="experience-heading" className="font-display text-h3 font-medium text-dim">
         Experience
       </h2>
-      <ul className="mt-6">
-        {resume.experience.map((job) => (
-          <Row key={`${job.company}-${job.start}`} job={job} />
-        ))}
-      </ul>
+      <div id="experience-rows" className="relative mt-6 md:pl-8">
+        <TimelineRule targetId="experience-rows" />
+        <ul>
+          {resume.experience.map((job) => (
+            <Row key={`${job.company}-${job.start}`} job={job} />
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
