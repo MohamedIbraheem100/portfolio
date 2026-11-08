@@ -3,8 +3,7 @@ import { site } from "@/lib/site";
 import { ButtonLink } from "@/components/ui/button-link";
 
 /*
-  W0: name + CV. "Work" and "Lab" join the nav when those sections exist
-  (W1 and W4), never before.
+  Nav grows only with real sections: Work and Contact exist since W1; Lab joins in W4.
 */
 export function SiteHeader() {
   return (
@@ -16,7 +15,13 @@ export function SiteHeader() {
         >
           {site.name}
         </Link>
-        <nav aria-label="Primary" className="flex items-center gap-6">
+        <nav aria-label="Primary" className="flex items-center gap-5 md:gap-7">
+          <Link href="/#work" className="text-small text-dim hover:text-amber md:text-body">
+            Work
+          </Link>
+          <Link href="/#contact" className="text-small text-dim hover:text-amber md:text-body">
+            Contact
+          </Link>
           <ButtonLink href="/cv" variant="quiet">
             CV
           </ButtonLink>

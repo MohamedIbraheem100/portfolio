@@ -1,6 +1,9 @@
 import { cacheLife } from "next/cache";
 import { Hero } from "@/components/hero/hero";
 import { SelectedWork } from "@/components/work/selected-work";
+import { Experience } from "@/components/experience/experience";
+import { HowIBuild } from "@/components/process/how-i-build";
+import { Contact } from "@/components/contact/contact";
 import { loadResume } from "@/lib/resume";
 
 /*
@@ -16,6 +19,9 @@ export default async function Home() {
     <>
       <Hero resume={resume} />
       <SelectedWork resume={resume} />
+      <Experience resume={resume} />
+      <HowIBuild />
+      <Contact resume={resume} />
     </>
   );
 }
