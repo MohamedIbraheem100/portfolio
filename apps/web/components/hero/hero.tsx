@@ -1,3 +1,4 @@
+import { preload } from "react-dom";
 import { ButtonLink } from "@/components/ui/button-link";
 import { CV_PDF_URL } from "@/lib/cv";
 import type { Resume } from "@/lib/resume";
@@ -18,6 +19,13 @@ export function Hero({ resume }: { resume: Resume }) {
   const { basics } = resume;
   const headline = isTodo(basics.headline) ? null : basics.headline;
   const email = isTodo(basics.email) ? null : basics.email;
+  // The still is the LCP element; ask the browser for it before it parses the markup.
+  preload("/portrait-still-1400.webp", {
+    as: "image",
+    fetchPriority: "high",
+    imageSrcSet: "/portrait-still-800.webp 800w, /portrait-still-1400.webp 1400w",
+    imageSizes: "(min-width: 768px) 58vw, 100vw",
+  });
 
   return (
     <section className="mx-auto w-full max-w-site px-4 pb-20 pt-6 md:px-8 md:pb-28 md:pt-16">
