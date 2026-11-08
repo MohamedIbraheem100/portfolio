@@ -37,10 +37,13 @@ class Settings(BaseSettings):
     chat_global_per_day: int = 500
     fit_limit_per_visitor_per_day: int = 5
     fit_global_per_day: int = 100
+    contact_limit_per_visitor_per_day: int = 5
+    contact_global_per_day: int = 100
 
     # Abuse protection (D10)
     allowed_origins: str = "http://localhost:3000"
     session_token_secret: str = ""
+    session_token_ttl_s: int = 3600
 
     # Recruiter Mode -> Mizan (W3)
     mizan_api_url: str = "https://mizan-hr-api.vercel.app"
