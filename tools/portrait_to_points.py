@@ -38,7 +38,7 @@ def remove_background(img: Image.Image) -> Image.Image:
     return remove(img, session=session, alpha_matting=False)
 
 
-def crop_head_and_shoulders(rgba: Image.Image, chest_ratio: float = 1.9) -> Image.Image:
+def crop_head_and_shoulders(rgba: Image.Image, chest_ratio: float = 1.55) -> Image.Image:
     """Crop to the subject's bounding box, then keep roughly head + shoulders.
 
     chest_ratio: crop height as a multiple of the head width estimate (the mask width
@@ -83,13 +83,35 @@ def estimate_depth(rgb: Image.Image, input_side: int = 1022) -> np.ndarray:
     return depth
 
 
+def stratified_pick(alpha: np.ndarray, count: int, rng: np.random.Generator) -> np.ndarray:
+    """Jittered grid inside the mask: even texture instead of random clumps and holes.
+
+    Cell size is chosen so the grid holds ~count cells over the mask area; cells whose
+    jittered sample lands outside the mask are dropped, then the result is trimmed or
+    topped up with random mask pixels to hit `count` exactly."""
+    h, w = alpha.shape
+    area = int((alpha > 128).sum())
+    cell = max(1.0, np.sqrt(area / count))
+    gy, gx = np.mgrid[0 : h : cell, 0 : w : cell]
+    gy = gy.ravel() + rng.uniform(0, cell, gy.size)
+    gx = gx.ravel() + rng.uniform(0, cell, gx.size)
+    r = np.clip(gy.astype(int), 0, h - 1)
+    c = np.clip(gx.astype(int), 0, w - 1)
+    keep = alpha[r, c] > 128
+    pick = np.stack([r[keep], c[keep]], axis=1)
+    if len(pick) >= count:
+        return pick[rng.choice(len(pick), size=count, replace=False)]
+    extra = np.argwhere(alpha > 128)
+    extra = extra[rng.choice(len(extra), size=count - len(pick), replace=False)]
+    return np.concatenate([pick, extra])
+
+
 def sample_points(rgba: Image.Image, depth: np.ndarray, count: int, rng: np.random.Generator):
     arr = np.asarray(rgba)
     alpha = arr[..., 3]
-    inside = np.argwhere(alpha > 128)  # (row, col)
-    if len(inside) < count:
-        raise SystemExit(f"mask has only {len(inside)} px, cannot sample {count}")
-    pick = inside[rng.choice(len(inside), size=count, replace=False)]
+    if int((alpha > 128).sum()) < count:
+        raise SystemExit(f"mask has only {(alpha > 128).sum()} px, cannot sample {count}")
+    pick = stratified_pick(alpha, count, rng)
     rows, cols = pick[:, 0], pick[:, 1]
     h, w = alpha.shape
     aspect = w / h
