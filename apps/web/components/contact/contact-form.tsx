@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { AnimatePresence, LazyMotion, domAnimation, m } from "motion/react";
 
 /*
   Contact form -> POST /api/contact (proxied to the API). Before sending it
@@ -80,8 +81,21 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
           {state.kind === "sending" ? "Sending" : "Send"}
         </button>
         <p id="contact-status" role="status" aria-live="polite" className="text-small text-dim">
-          {state.kind === "sent" && `Sent. I reply from ${fallbackEmail}.`}
-          {state.kind === "error" && <span className="text-amber">{state.message}</span>}
+          {/* Motion only in response to the visitor (motion rule 3): the status fades in once. */}
+          <LazyMotion features={domAnimation}>
+            <AnimatePresence mode="wait">
+              {state.kind === "sent" && (
+                <m.span key="sent" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                  Sent. I reply from {fallbackEmail}.
+                </m.span>
+              )}
+              {state.kind === "error" && (
+                <m.span key="error" className="text-amber" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                  {state.message}
+                </m.span>
+              )}
+            </AnimatePresence>
+          </LazyMotion>
         </p>
       </div>
     </form>
