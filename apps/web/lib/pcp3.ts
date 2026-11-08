@@ -38,7 +38,7 @@ export function parsePcp3(buf: ArrayBuffer): PointData {
 }
 
 export async function loadPoints(url: string, signal?: AbortSignal): Promise<PointData> {
-  const res = await fetch(url, { signal });
+  const res = await fetch(url, { signal, credentials: "omit" });
   if (!res.ok) throw new Error(`Could not load ${url}: ${res.status}`);
   return parsePcp3(await res.arrayBuffer());
 }

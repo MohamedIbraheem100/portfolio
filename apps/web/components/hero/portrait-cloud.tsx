@@ -5,31 +5,25 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { headBox, loadPoints, type PointData } from "@/lib/pcp3";
 
 /*
-  Progressive hero (W5). The static still (children) renders first and is the
-  LCP element. After the page is idle this component decides whether to go live:
+  Progressive hero (W5).
 
-  - prefers-reduced-motion   -> stay static (motion rule 5)
-  - no WebGL                 -> stay static (motion rule 6)
-  - coarse pointer (phones)  -> live with half the points, no parallax
+  A tiny inline script in <head> (app/layout.tsx) decides before first paint:
+  fine pointer + WebGL + no reduced-motion  ->  <html class="hero-live">.
+  CSS then hides the still from the very first frame, so a capable desktop
+  never sees a static image: the name is there and the portrait condenses out
+  of dust as soon as the point data and three.js arrive (both start loading
+  immediately; the script also preloads the point file).
 
-  When the first WebGL frame is drawn the still crossfades to the points, which
-  start already assembled and pixel-matched to it (an invisible swap). The cloud
-  then disintegrates and reassembles, and the amber box locks onto the head with
-  real telemetry only: point count, measured reassemble time, measured fps.
+  Everyone else (phones, reduced motion, no WebGL) gets the still, which is
+  also the LCP element Lighthouse measures on mobile.
+
+  After the assemble: one amber sweep, then the box locks onto the head with
+  measured telemetry only (point count, assemble time, fps).
 */
 
 const PointCloudPortrait = dynamic(() => import("@/three/PointCloudPortrait"), { ssr: false });
 
 type Phase = "static" | "loading" | "live" | "scan" | "locked";
-
-function supportsWebGL(): boolean {
-  try {
-    const c = document.createElement("canvas");
-    return Boolean(c.getContext("webgl2") || c.getContext("webgl"));
-  } catch {
-    return false;
-  }
-}
 
 function useFps(enabled: boolean): number {
   const [fps, setFps] = useState(0);
@@ -57,48 +51,27 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
   const figure = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>("static");
   const [data, setData] = useState<PointData | null>(null);
-  const [parallax, setParallax] = useState(true);
   const [active, setActive] = useState(true);
   const [assembleMs, setAssembleMs] = useState<number | null>(null);
-  const fps = useFps(phase === "live" || phase === "locked");
+  const fps = useFps(phase === "live" || phase === "scan" || phase === "locked");
 
-  // Decide and load after the page is idle, never in the LCP path.
+  // Go live only where the head script said so; load the points at once.
   useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || !supportsWebGL()) return;
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    if (!document.documentElement.classList.contains("hero-live")) return;
     const controller = new AbortController();
     const start = () => {
-      setParallax(!coarse);
       setPhase("loading");
-      loadPoints(coarse ? "/portrait-20k.pcp3" : "/portrait-40k.pcp3", controller.signal)
+      loadPoints("/portrait-40k.pcp3", controller.signal)
         .then(setData)
-        .catch(() => setPhase("static"));
+        .catch(() => {
+          document.documentElement.classList.remove("hero-live");
+          setPhase("static");
+        });
     };
-    // Go live on the visitor's first gesture (most desktops: within a second), or 3 s after the
-    // page is idle. Parsing three.js and building 40k points costs ~0.5 s of main thread on a
-    // slow phone; tying it to a gesture or a late timer keeps it out of the page's load metrics.
-    let fired = false;
-    let timer = 0;
-    const events: Array<keyof WindowEventMap> = ["pointermove", "pointerdown", "scroll", "keydown", "touchstart"];
-    const fire = () => {
-      if (fired) return;
-      fired = true;
-      window.clearTimeout(timer);
-      events.forEach((e) => window.removeEventListener(e, fire));
-      start();
-    };
-    const arm = () => {
-      events.forEach((e) => window.addEventListener(e, fire, { passive: true, once: true }));
-      timer = window.setTimeout(fire, 3000);
-    };
-    const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
-    const handle = idle ? idle(arm) : window.setTimeout(arm, 800);
+    const id = window.setTimeout(start, 0);
     return () => {
+      window.clearTimeout(id);
       controller.abort();
-      window.clearTimeout(timer);
-      events.forEach((e) => window.removeEventListener(e, fire));
-      if (!idle) window.clearTimeout(handle as number);
     };
   }, []);
 
@@ -130,28 +103,18 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(t);
   }, [phase]);
 
-  const live = phase === "live" || phase === "scan" || phase === "locked";
   const box = data && phase === "locked" ? headBox(data) : null;
 
   return (
     <div ref={figure} className="relative">
-      {/* The still: LCP element, fallback, and the thing the points assemble into. */}
-      <div
-        className="transition-opacity duration-300 ease-out"
-        style={{ opacity: live ? 0 : 1 }}
-        aria-hidden={live ? "true" : undefined}
-      >
-        {children}
-      </div>
+      {/* The still: hidden from first paint under html.hero-live (globals.css), otherwise the hero. */}
+      <div className="hero-still">{children}</div>
 
       {data && (
-        <div
-          className="absolute inset-0 transition-opacity duration-300"
-          style={{ opacity: live ? 1 : 0 }}
-        >
+        <div className="absolute inset-0">
           <PointCloudPortrait
             data={data}
-            parallax={parallax}
+            parallax
             active={active}
             onFirstFrame={onFirstFrame}
             onAssembled={onAssembled}
@@ -179,7 +142,9 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
           }}
         >
           <span className="absolute -top-6 left-0 whitespace-nowrap bg-amber px-1.5 py-0.5 font-mono text-[12px] leading-4 text-night">
-            person · {data?.count.toLocaleString()} pts · {assembleMs !== null ? `${(assembleMs / 1000).toFixed(2)} s` : ""}{fps ? ` · ${fps} fps` : ""}
+            person · {data?.count.toLocaleString()} pts
+            {assembleMs !== null ? ` · ${(assembleMs / 1000).toFixed(2)} s` : ""}
+            {fps ? ` · ${fps} fps` : ""}
           </span>
         </div>
       )}
