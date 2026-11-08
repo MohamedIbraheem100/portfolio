@@ -79,8 +79,11 @@ projects:
     one_liner: "AI recruiter: evidence-based CV screening against a job description. Decision support, never auto-reject."
     role: "TODO(content): solo / team, your part"
     stack: [Next.js, FastAPI, LangGraph, Gemini, Groq, Neon Postgres, Upstash Redis, Vercel]
+    # Results below are stated on mizan-hr.vercel.app and enforced in its code (verify.py).
     results:
-      - "TODO(content): a verifiable result with a number"
+      - "Every quote the model cites is checked in code against the CV line; a quote that is not there is discarded and the verdict falls to no evidence."
+      - "Under 10 seconds per CV on the public demo."
+      - "No CV files are stored; only scores and quotes, deleted after 24 hours."
     what_failed: "TODO(content): one thing that failed and why"
     links:
       live: https://mizan-hr.vercel.app
@@ -89,7 +92,8 @@ projects:
   - slug: cashy
     name: Cashy
     one_liner: "Mobile app that identifies Egyptian banknotes and flags counterfeits in real time, with two YOLO models at 95% mAP."
-    role: "Graduation project, Fayoum University (grade: Excellent). TODO(content): team size and your part"
+    # TODO(content): team size and his part (five-person team per the ChatGPT draft; confirm)
+    role: "Graduation project, Fayoum University (grade: Excellent)"
     stack: [YOLO, TensorFlow Lite, OpenCV, Flask]
     results:
       - "Two specialized YOLO models (classification + counterfeit detection) reaching 95% mAP."
@@ -101,7 +105,8 @@ projects:
   - slug: spotlight
     name: SpotLight
     one_liner: "Inserts advertisements into existing video (films, series, football) so they sit on real surfaces instead of floating."
-    role: "Capstone project at NTI. TODO(content): team size and your part"
+    # TODO(content): team size and his part
+    role: "Capstone project at NTI"
     stack: [Qwen2.5-VL 7B, OWLv2, SAM2, OpenCV homography, Stable Diffusion inpainting]
     results:
       - "Qwen2.5-VL for scene understanding, OWLv2 for surface detection, SAM2 for pixel-accurate foreground tracking across all frames."

@@ -20,6 +20,19 @@ describe("resume.yaml", () => {
     }
   });
 
+  it("never hides a TODO marker inside a real sentence", () => {
+    // isTodo() only recognises markers at the start of a value; a marker in the
+    // middle of a sentence would reach visitors as text.
+    const walk = (v: unknown, path: string): string[] => {
+      if (typeof v === "string") return v.includes("TODO(content)") && !isTodo(v) ? [path] : [];
+      if (Array.isArray(v)) return v.flatMap((x, i) => walk(x, `${path}[${i}]`));
+      if (v && typeof v === "object")
+        return Object.entries(v).flatMap(([k, x]) => walk(x, path ? `${path}.${k}` : k));
+      return [];
+    };
+    expect(walk(resume, "")).toEqual([]);
+  });
+
   it("lists pending content so nothing invented slips through", () => {
     const pending = pendingContent(resume);
     expect(Array.isArray(pending)).toBe(true);
