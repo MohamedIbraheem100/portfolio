@@ -14,8 +14,8 @@ import { headBox, loadPoints, type PointData } from "@/lib/pcp3";
   of dust inside it.
 
   - desktop: 40k points, loads immediately, cursor parallax.
-  - touch:   20k points, no parallax, starts on the first touch/scroll or 2.2 s
-             after load (keeps the work out of the mobile load metrics).
+  - touch:   20k points, no parallax, starts on the first scroll or touch
+             (keeps the work out of the mobile load metrics).
   - reduced motion / no WebGL: the still.
 
   After the assemble: one amber sweep, then the box locks onto the head with
@@ -84,10 +84,11 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
     if (m === "desktop") {
       timer = window.setTimeout(start, 0);
     } else {
-      const arm = () => {
+      // Touch: the portrait sits below the first screen (text comes first), so it starts on the
+      // visitor's first scroll or touch, never on a timer or on mere visibility. That keeps the
+      // three.js work out of the mobile load metrics and makes the reveal feel earned.
+      const arm = () =>
         gestures.forEach((e) => window.addEventListener(e, start, { passive: true, once: true }));
-        timer = window.setTimeout(start, 2200);
-      };
       if (document.readyState === "complete") arm();
       else window.addEventListener("load", arm, { once: true });
     }

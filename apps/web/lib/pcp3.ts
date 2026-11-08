@@ -88,9 +88,10 @@ export function headBox(data: PointData): { left: number; top: number; width: nu
   const lo = xs[Math.floor(xs.length * 0.01)];
   const hi = xs[Math.floor(xs.length * 0.99)];
   const toX = (x: number) => (x + xMax) / (2 * xMax);
-  const pad = 0.02;
+  // Owner's preference: a little more room around the face and the box ending below the chin.
+  const pad = 0.03;
   const topF = top / BINS;
-  const bottomF = (neck + 1) / BINS;
+  const bottomF = Math.min(1, (neck + 3) / BINS);
   return {
     left: Math.max(0, toX(lo) - pad),
     top: Math.max(0, topF - pad),
