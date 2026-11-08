@@ -126,8 +126,7 @@ Folded into CLAUDE.md once the list is complete.
 - `docs/brief.md` = the original design brief without the company byline. Shows the design thinking.
 
 ## D24. Public contact email
-- A personal professional address (not a company one). Value pending from the owner: `TODO(content)`
-  in resume.yaml and .env.example until then.
+- A personal professional address (not a company one): `mohamed.abdelwahed.ai@gmail.com` (settled 2026-11-08).
 
 ## D25. Lighthouse CI runs against a local production build in GitHub Actions
 - `next build` + `next start` inside the workflow; no dependency on Vercel preview timing.

@@ -12,7 +12,6 @@ export const site = {
     github: "https://github.com/MohamedIbraheem100",
     // TODO(content): public LinkedIn URL
     linkedin: undefined as string | undefined,
-    // TODO(content): public professional email (D24)
-    email: undefined as string | undefined,
+    email: "mohamed.abdelwahed.ai@gmail.com",
   },
 } as const;

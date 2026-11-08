@@ -1,0 +1,144 @@
+# Single source of truth for the site, /cv, the PDF and the AI twin (D13: every number
+# the twin says is checked against this file).
+#
+# Rules:
+# - Nothing here is invented. A value we do not have yet is the literal string
+#   "TODO(content): ..." and is hidden from visitors until the owner fills it.
+# - Every number carries its context (what, where, how measured). No bare percentages.
+# - Spelling: Mohamed Ibrahim (D7).
+
+basics:
+  name: Mohamed Ibrahim
+  role: AI Engineer
+  # One sentence under the name in the hero. Carries the two strongest verified numbers (D15).
+  headline: "TODO(content): one sentence on what he builds, with two verified numbers"
+  location: "TODO(content): city, country"
+  email: mohamed.abdelwahed.ai@gmail.com
+  links:
+    github: https://github.com/MohamedIbraheem100
+    linkedin: "TODO(content): LinkedIn URL"
+    site: https://mohamedibrahim.is-a.dev
+  # Relocation / remote / availability, in his words. Also feeds faq.md for the twin.
+  availability: "TODO(content): availability, remote, relocation"
+
+# Verified numbers only. Each one is rendered inside its project's scene, never as a stat row.
+highlights:
+  - value: "TODO(content): e.g. 95% mAP"
+    context: "TODO(content): which model, which dataset, how many classes/images"
+    project: cashy
+  - value: "TODO(content): e.g. 30% latency reduction"
+    context: "TODO(content): which system, p50/p95, before and after"
+    project: "TODO(content)"
+
+experience:
+  - company: H.Hunters
+    title: "TODO(content): title"
+    start: "TODO(content): YYYY-MM"
+    end: null            # null = present
+    location: "TODO(content)"
+    # Impact, not duties. 3-4 lines with numbers. Architecture and decisions only,
+    # no client data (CLAUDE.md: H.Hunters case study rules).
+    impact:
+      - "TODO(content): achievement with number"
+      - "TODO(content): achievement with number"
+    public_notes: "TODO(content): what may NOT be said publicly"
+  - company: AL Master
+    title: "TODO(content): title"
+    start: "TODO(content): YYYY-MM"
+    end: "TODO(content): YYYY-MM"
+    location: "TODO(content)"
+    impact:
+      - "TODO(content)"
+  - company: NTI
+    title: "TODO(content): title"
+    start: "TODO(content): YYYY-MM"
+    end: "TODO(content): YYYY-MM"
+    location: "TODO(content)"
+    impact:
+      - "TODO(content)"
+  - company: Watanya
+    title: "TODO(content): title"
+    start: "TODO(content): YYYY-MM"
+    end: "TODO(content): YYYY-MM"
+    location: "TODO(content)"
+    impact:
+      - "TODO(content)"
+
+projects:
+  - slug: mizan
+    name: Mizan
+    flagship: true
+    one_liner: "AI recruiter: evidence-based CV screening against a job description. Decision support, never auto-reject."
+    role: "TODO(content): solo / team, your part"
+    stack: [Next.js, FastAPI, LangGraph, Gemini, Groq, Neon Postgres, Upstash Redis, Vercel]
+    results:
+      - "TODO(content): a verifiable result with a number"
+    what_failed: "TODO(content): one thing that failed and why"
+    links:
+      live: https://mizan-hr.vercel.app
+      repo: https://github.com/MohamedIbraheem100/mizan-hr
+    demo: live            # live | video | case-study
+  - slug: cashy
+    name: Cashy
+    one_liner: "TODO(content): currency classifier and counterfeit detector, in one sentence"
+    role: "TODO(content)"
+    stack: [YOLO, ONNX, ONNX Runtime Web]
+    results:
+      - "TODO(content)"
+    what_failed: "TODO(content)"
+    links:
+      repo: "TODO(content): repo URL or none"
+    demo: live
+  - slug: spotlight
+    name: SpotLight
+    one_liner: "TODO(content): ad insertion into video, in one sentence"
+    role: "TODO(content)"
+    stack: [Qwen2.5-VL, OWLv2, SAM2, Homography, Stable Diffusion inpainting]
+    results:
+      - "TODO(content)"
+    what_failed: "TODO(content)"
+    links:
+      repo: "TODO(content)"
+    demo: video
+  - slug: storytelling-agent
+    name: Storytelling Agent
+    one_liner: "TODO(content): in one sentence"
+    role: "TODO(content)"
+    stack: ["TODO(content)"]
+    results:
+      - "TODO(content)"
+    what_failed: "TODO(content)"
+    links:
+      repo: "TODO(content)"
+    demo: video
+  - slug: h-hunters
+    name: H.Hunters
+    one_liner: "TODO(content): architecture-level description, no client data"
+    role: "TODO(content)"
+    stack: ["TODO(content)"]
+    results:
+      - "TODO(content)"
+    what_failed: "TODO(content)"
+    links: {}
+    demo: case-study
+
+education:
+  - institution: "TODO(content)"
+    degree: "TODO(content)"
+    start: "TODO(content): YYYY"
+    end: "TODO(content): YYYY"
+
+# Grouped, no percentages, no logos. Only things used in the projects above.
+skills:
+  - group: Computer vision
+    items: ["TODO(content)"]
+  - group: Agents and LLM systems
+    items: ["TODO(content)"]
+  - group: Engineering
+    items: ["TODO(content)"]
+
+languages:
+  - language: Arabic
+    level: Native
+  - language: English
+    level: "TODO(content): level"
