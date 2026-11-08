@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+assets-src/
+node_modules/
+.next/
+__pycache__/
+.vercel/
