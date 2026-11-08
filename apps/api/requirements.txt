@@ -1,0 +1,8 @@
+# Runtime deps only. Keep light: Vercel Python bundle must stay small (no torch, no local models).
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+pydantic==2.14.3
+pydantic-settings==2.10.1
+
+# Outbound HTTP (Upstash REST, Mizan, Resend). LLM provider SDKs are added in W2.
+httpx==0.28.1
