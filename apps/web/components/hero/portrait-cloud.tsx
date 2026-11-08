@@ -12,14 +12,15 @@ import { headBox, loadPoints, type PointData } from "@/lib/pcp3";
   - no WebGL                 -> stay static (motion rule 6)
   - coarse pointer (phones)  -> live with half the points, no parallax
 
-  When the first WebGL frame is drawn the still fades out while the points
-  assemble into the same portrait; then the amber box locks onto the head with
-  real telemetry only: point count, measured assemble time, measured fps.
+  When the first WebGL frame is drawn the still crossfades to the points, which
+  start already assembled and pixel-matched to it (an invisible swap). The cloud
+  then disintegrates and reassembles, and the amber box locks onto the head with
+  real telemetry only: point count, measured reassemble time, measured fps.
 */
 
 const PointCloudPortrait = dynamic(() => import("@/three/PointCloudPortrait"), { ssr: false });
 
-type Phase = "static" | "loading" | "live" | "locked";
+type Phase = "static" | "loading" | "live" | "scan" | "locked";
 
 function supportsWebGL(): boolean {
   try {
@@ -120,17 +121,23 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
   const onFirstFrame = useCallback(() => setPhase("live"), []);
   const onAssembled = useCallback((ms: number) => {
     setAssembleMs(ms);
-    setPhase("locked");
+    setPhase("scan");
   }, []);
+  // The scan line sweeps once (CSS animation, 550 ms); when it ends the box locks on.
+  useEffect(() => {
+    if (phase !== "scan") return;
+    const t = window.setTimeout(() => setPhase("locked"), 600);
+    return () => window.clearTimeout(t);
+  }, [phase]);
 
-  const live = phase === "live" || phase === "locked";
+  const live = phase === "live" || phase === "scan" || phase === "locked";
   const box = data && phase === "locked" ? headBox(data) : null;
 
   return (
     <div ref={figure} className="relative">
       {/* The still: LCP element, fallback, and the thing the points assemble into. */}
       <div
-        className="transition-opacity duration-500 ease-out"
+        className="transition-opacity duration-300 ease-out"
         style={{ opacity: live ? 0 : 1 }}
         aria-hidden={live ? "true" : undefined}
       >
@@ -152,11 +159,18 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Detection box: locks on after the assemble; telemetry is measured, not invented. */}
+      {/* Detector sweep: one pass over the portrait, then the box. */}
+      {phase === "scan" && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="hero-scanline absolute left-0 right-0 h-px bg-amber shadow-[0_0_12px_2px_rgba(255,176,31,0.55)]" />
+        </div>
+      )}
+
+      {/* Detection box: locks on after the sweep; telemetry is measured, not invented. */}
       {box && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute border-2 border-amber transition-opacity duration-300"
+          className="hero-box pointer-events-none absolute border-2 border-amber"
           style={{
             left: `${box.left * 100}%`,
             top: `${box.top * 100}%`,
@@ -165,7 +179,7 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
           }}
         >
           <span className="absolute -top-6 left-0 whitespace-nowrap bg-amber px-1.5 py-0.5 font-mono text-[12px] leading-4 text-night">
-            person · {data?.count.toLocaleString()} pts · {assembleMs} ms{fps ? ` · ${fps} fps` : ""}
+            person · {data?.count.toLocaleString()} pts · {assembleMs !== null ? `${(assembleMs / 1000).toFixed(2)} s` : ""}{fps ? ` · ${fps} fps` : ""}
           </span>
         </div>
       )}
