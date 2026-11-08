@@ -138,3 +138,14 @@ Folded into CLAUDE.md once the list is complete.
   https://mohamedibrahim-ai.vercel.app and https://mohamedibrahim-ai-api.vercel.app.
 - Lesson: renaming a Vercel project does not change its `.vercel.app` domain; add the new domain under
   Settings > Domains. `DEPLOYMENT_NOT_FOUND` on a `.vercel.app` host means the name is unassigned.
+
+## D26. Point cloud art direction: mono phosphor, amber as the only accent (settled 2026-11-08)
+- Outcome of the D9 prototype with the real photo. Full inferno by depth reads as a thermal camera and
+  flattens the face (the whole face sits at one depth relative to the shoulders). Owner rejected it.
+- Chosen: points in `phosphor` on `night`; brightness = photo luminance (gamma 0.7, capped at 0.92)
+  times nearness; point size follows luminance (halftone); jittered-grid sampling; head-and-shoulders
+  crop (chest ratio 1.55). The amber bounding box stays the only accent in the hero.
+- Alternatives kept in the prototype for reference: ember (restrained inferno), duotone, photo.
+- The inferno ramp remains reserved for real model outputs (Lab heatmaps, detections), per the token rules.
+- Numbers from the prototype: 40k points, 1.6 s assemble, 45 to 144 fps on an integrated AMD GPU
+  depending on point size; point size vs density is tuned in W5.
