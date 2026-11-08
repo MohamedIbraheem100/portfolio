@@ -79,8 +79,11 @@ projects:
     one_liner: "AI recruiter: evidence-based CV screening against a job description. Decision support, never auto-reject."
     role: "TODO(content): solo / team, your part"
     stack: [Next.js, FastAPI, LangGraph, Gemini, Groq, Neon Postgres, Upstash Redis, Vercel]
+    # Results below are stated on mizan-hr.vercel.app and enforced in its code (verify.py).
     results:
-      - "TODO(content): a verifiable result with a number"
+      - "Every quote the model cites is checked in code against the CV line; a quote that is not there is discarded and the verdict falls to no evidence."
+      - "Under 10 seconds per CV on the public demo."
+      - "No CV files are stored; only scores and quotes, deleted after 24 hours."
     what_failed: "TODO(content): one thing that failed and why"
     links:
       live: https://mizan-hr.vercel.app
