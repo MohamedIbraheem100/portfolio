@@ -99,7 +99,13 @@
   }
 }
 
-/* Hero detector moment (components/hero/portrait-cloud.tsx): one sweep, then the box draws on. */
+/* Hero (components/hero/portrait-cloud.tsx). On capable desktops the head script adds
+   html.hero-live before first paint, so the still never flashes: the cloud is the hero. */
+html.hero-live .hero-still {
+  visibility: hidden;
+}
+
+/* Hero detector moment: one sweep, then the box draws on. */
 @keyframes hero-scan {
   from { top: 0; opacity: 0; }
   10% { opacity: 1; }
