@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Point cloud prototype</title>
+<!--
+  D9: standalone prototype to judge the portrait by eye before anything is built
+  around it. Serve this folder over HTTP (fetch cannot read file://), with the
+  .bin files from tools/portrait_to_points.py in ./data/.
+-->
+<style>
+  :root { --night:#0D1330; --raised:#161D45; --phosphor:#E9ECF5; --dim:#8B92AB; --amber:#FFB01F; }
+  html, body { margin:0; height:100%; background:var(--night); color:var(--phosphor); font:15px/1.5 system-ui, sans-serif; }
+  #c { position:fixed; inset:0; display:block; }
+  #ui { position:fixed; left:16px; top:16px; display:grid; gap:10px; background:rgba(22,29,69,.85); padding:14px 16px; border-radius:2px; max-width:300px; }
+  .row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .row span { color:var(--dim); min-width:70px; font-size:13px; }
+  button { background:transparent; color:var(--phosphor); border:1px solid rgba(233,236,245,.3); border-radius:2px; padding:4px 10px; cursor:pointer; font:inherit; font-size:13px; }
+  button.on { border-color:var(--amber); color:var(--amber); }
+  button.primary { background:var(--amber); color:var(--night); border-color:var(--amber); }
+  input[type=range] { width:140px; accent-color:var(--amber); }
+  #tele { position:fixed; right:16px; bottom:16px; font:13px/1.4 ui-monospace, monospace; color:var(--dim); text-align:right; }
+  #tele b { color:var(--phosphor); font-weight:400; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div class="row"><span>points</span>
+    <button data-count="20000">20k</button><button data-count="40000" class="on">40k</button><button data-count="60000">60k</button></div>
+  <div class="row"><span>palette</span>
+    <button data-pal="2" class="on">mono</button><button data-pal="3">duotone</button><button data-pal="1">ember</button><button data-pal="4">photo</button><button data-pal="0">inferno</button></div>
+  <div class="row"><span>halftone</span>
+    <button data-half="1" class="on">size by light</button><button data-half="0">uniform</button></div>
+  <div class="row"><span>blend</span>
+    <button data-blend="1">soft additive</button><button data-blend="0" class="on">solid</button></div>
+  <div class="row"><span>luma mix</span><input id="luma" type="range" min="0" max="1" step="0.05" value="0.75" /></div>
+  <div class="row"><span>relief</span><input id="relief" type="range" min="0" max="0.8" step="0.01" value="0.35" /></div>
+  <div class="row"><span>size</span><input id="size" type="range" min="0.5" max="6" step="0.1" value="3.2" /></div>
+  <div class="row"><span></span><button id="replay" class="primary">replay assemble</button></div>
+</div>
+<div id="tele"><b id="fps">--</b> fps · <b id="n">--</b> points · <span id="gpu"></span></div>
+
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setClearColor(0x0d1330, 1);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+camera.position.set(0, 0, 3.6);
+const group = new THREE.Group();
+scene.add(group);
+
+const vert = /* glsl */`
+  attribute vec3 target;
+  attribute vec3 start;
+  attribute vec3 color;
+  attribute float cdepth;
+  uniform float uAssemble;   // 0 scattered -> 1 assembled
+  uniform float uRelief;
+  uniform float uSize;
+  uniform float uDpr;
+  uniform float uLumaMix;
+  uniform int uHalftone;
+  varying float vDepth;
+  varying vec3 vColor;
+  float easeOutCubic(float t){ return 1.0 - pow(1.0 - t, 3.0); }
+  void main(){
+    // per-point stagger from the start position hash
+    float stagger = fract(sin(dot(start.xy, vec2(12.9898,78.233))) * 43758.5453) * 0.35;
+    float t = easeOutCubic(clamp((uAssemble - stagger) / (1.0 - stagger), 0.0, 1.0));
+    vec3 tgt = vec3(target.xy, (target.z - 0.5) * uRelief);
+    vec3 p = mix(start, tgt, t);
+    // inferno index: depth alone flattens the face; photo luminance carries the features.
+    float luma = dot(color, vec3(0.299, 0.587, 0.114));
+    vDepth = mix(cdepth, luma, uLumaMix);
+    vColor = color;
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    float lum = pow(dot(color, vec3(0.299, 0.587, 0.114)), 0.7);
+    float half_ = uHalftone == 1 ? (0.45 + 0.9 * lum) : 1.0;
+    gl_PointSize = uSize * uDpr * (2.2 / -mv.z) * (0.8 + 0.4 * target.z) * half_;
+    gl_Position = projectionMatrix * mv;
+  }`;
+const frag = /* glsl */`
+  precision highp float;
+  uniform int uPalette;
+  uniform int uAdditive;
+  uniform float uLumaMix;
+  varying float vDepth;   // rank-equalized depth 0..1 (1 = nearest)
+  varying vec3 vColor;    // photo color
+  const vec3 NIGHT = vec3(0.051, 0.075, 0.188);
+  const vec3 RAISED = vec3(0.086, 0.114, 0.271);
+  const vec3 DIM = vec3(0.545, 0.573, 0.671);
+  const vec3 PHOSPHOR = vec3(0.914, 0.925, 0.961);
+  const vec3 AMBER = vec3(1.000, 0.690, 0.122);
+  vec3 inferno(float t){
+    vec3 c0 = vec3(0.196,0.039,0.369), c1 = vec3(0.545,0.137,0.412), c2 = vec3(0.882,0.329,0.290),
+         c3 = vec3(0.988,0.647,0.039), c4 = vec3(0.988,1.000,0.643);
+    t = clamp(t, 0.0, 1.0) * 4.0;
+    if (t < 1.0) return mix(c0, c1, t);
+    if (t < 2.0) return mix(c1, c2, t - 1.0);
+    if (t < 3.0) return mix(c2, c3, t - 2.0);
+    return mix(c3, c4, t - 3.0);
+  }
+  void main(){
+    vec2 q = gl_PointCoord - 0.5;
+    float r2 = dot(q, q);
+    if (r2 > 0.25) discard;
+    float luma = pow(dot(vColor, vec3(0.299, 0.587, 0.114)), 0.7);
+    luma = min(luma, 0.92);
+    float t = mix(vDepth, luma, uLumaMix);
+    vec3 col;
+    if (uPalette == 0) {
+      col = inferno(t);                                   // full ramp (the original idea)
+    } else if (uPalette == 1) {
+      col = mix(inferno(t * 0.8), PHOSPHOR, 0.22);        // ember: ramp without the yellow top, desaturated
+    } else if (uPalette == 2) {
+      float v = pow(luma, 0.85) * (0.55 + 0.45 * vDepth); // mono: scan-like, brightness = light x nearness
+      col = mix(RAISED, PHOSPHOR, v);
+    } else if (uPalette == 3) {
+      vec3 base = mix(RAISED, PHOSPHOR, pow(luma, 0.9));   // duotone: mono + amber on the nearest points
+      col = mix(base, AMBER, smoothstep(0.78, 1.0, vDepth) * 0.55 * (0.4 + 0.6 * luma));
+    } else {
+      col = mix(vec3(luma), vColor, 0.55) * (0.75 + 0.25 * vDepth); // photo, half desaturated
+    }
+    float alpha = 1.0 - smoothstep(0.12, 0.25, r2);      // soft edge
+    if (uAdditive == 1) { gl_FragColor = vec4(col * alpha * 0.85, 1.0); }
+    else { gl_FragColor = vec4(col, alpha); }
+  }`;
+
+const material = new THREE.ShaderMaterial({
+  vertexShader: vert, fragmentShader: frag, depthTest: true, depthWrite: false, transparent: true,
+  blending: THREE.NormalBlending,
+  uniforms: { uAssemble: { value: 0 }, uRelief: { value: 0.35 }, uSize: { value: 2.4 }, uDpr: { value: renderer.getPixelRatio() }, uPalette: { value: 2 }, uAdditive: { value: 0 }, uHalftone: { value: 1 }, uLumaMix: { value: 0.75 } },
+});
+function setBlend(additive) {
+  material.uniforms.uAdditive.value = additive ? 1 : 0;
+  material.blending = additive ? THREE.AdditiveBlending : THREE.NormalBlending;
+  material.needsUpdate = true;
+}
+let points = null;
+let assembleStart = performance.now();
+const ASSEMBLE_MS = 1600;
+
+async function load(count) {
+  const buf = await (await fetch(`./data/portrait-${count}.bin`)).arrayBuffer();
+  const dv = new DataView(buf);
+  if (String.fromCharCode(...new Uint8Array(buf, 0, 4)) !== "PCP2") throw new Error("bad magic");
+  const n = dv.getUint32(4, true);
+  const xyz = new Float32Array(buf, 12, n * 3);
+  const rgb = new Uint8Array(buf, 12 + n * 12, n * 4);
+  const target = new Float32Array(n * 3), start = new Float32Array(n * 3), color = new Float32Array(n * 3), cdepth = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    target[i*3] = xyz[i*3]; target[i*3+1] = xyz[i*3+1]; target[i*3+2] = xyz[i*3+2];
+    // scatter: a loose sphere around the camera axis
+    const r = 1.6 + Math.random() * 1.4, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+    start[i*3] = r * Math.sin(ph) * Math.cos(th); start[i*3+1] = r * Math.sin(ph) * Math.sin(th) * 0.8; start[i*3+2] = r * Math.cos(ph) * 0.6 - 0.4;
+    color[i*3] = rgb[i*4] / 255; color[i*3+1] = rgb[i*4+1] / 255; color[i*3+2] = rgb[i*4+2] / 255; cdepth[i] = rgb[i*4+3] / 255;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(target, 3));
+  geo.setAttribute("target", new THREE.BufferAttribute(target, 3));
+  geo.setAttribute("start", new THREE.BufferAttribute(start, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(color, 3));
+  geo.setAttribute("cdepth", new THREE.BufferAttribute(cdepth, 1));
+  if (points) { group.remove(points); points.geometry.dispose(); }
+  points = new THREE.Points(geo, material);
+  group.add(points);
+  document.getElementById("n").textContent = n.toLocaleString();
+  assembleStart = performance.now();
+}
+
+// UI
+document.querySelectorAll("[data-count]").forEach(b => b.onclick = () => { document.querySelectorAll("[data-count]").forEach(x => x.classList.remove("on")); b.classList.add("on"); load(+b.dataset.count); });
+document.querySelectorAll("[data-pal]").forEach(b => b.onclick = () => { document.querySelectorAll("[data-pal]").forEach(x => x.classList.remove("on")); b.classList.add("on"); material.uniforms.uPalette.value = +b.dataset.pal; });
+document.querySelectorAll("[data-half]").forEach(b => b.onclick = () => { document.querySelectorAll("[data-half]").forEach(x => x.classList.remove("on")); b.classList.add("on"); material.uniforms.uHalftone.value = +b.dataset.half; });
+document.querySelectorAll("[data-blend]").forEach(b => b.onclick = () => { document.querySelectorAll("[data-blend]").forEach(x => x.classList.remove("on")); b.classList.add("on"); setBlend(+b.dataset.blend === 1); });
+// ?pal=N&blend=N&luma=X&size=X in the URL preselect a variant (used for side-by-side screenshots)
+const qs = new URLSearchParams(location.search);
+if (qs.has("pal")) document.querySelector(`[data-pal="${qs.get("pal")}"]`)?.click();
+if (qs.has("half")) document.querySelector(`[data-half="${qs.get("half")}"]`)?.click();
+if (qs.has("blend")) document.querySelector(`[data-blend="${qs.get("blend")}"]`)?.click();
+if (qs.has("luma")) { const el = document.getElementById("luma"); el.value = qs.get("luma"); material.uniforms.uLumaMix.value = +el.value; }
+if (qs.has("size")) { const el = document.getElementById("size"); el.value = qs.get("size"); material.uniforms.uSize.value = +el.value; }
+document.getElementById("luma").oninput = e => material.uniforms.uLumaMix.value = +e.target.value;
+document.getElementById("relief").oninput = e => material.uniforms.uRelief.value = +e.target.value;
+document.getElementById("size").oninput = e => material.uniforms.uSize.value = +e.target.value;
+document.getElementById("replay").onclick = () => assembleStart = performance.now();
+
+// cursor parallax, max ~8 degrees
+let tx = 0, ty = 0;
+addEventListener("pointermove", e => { tx = (e.clientX / innerWidth - 0.5) * 2; ty = (e.clientY / innerHeight - 0.5) * 2; });
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize); resize();
+
+const gl = renderer.getContext();
+const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+document.getElementById("gpu").textContent = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "webgl";
+
+let frames = 0, last = performance.now();
+function tick(now) {
+  const t = reduced ? 1 : Math.min(1, (now - assembleStart) / ASSEMBLE_MS);
+  material.uniforms.uAssemble.value = t;
+  if (!reduced) {
+    const max = THREE.MathUtils.degToRad(8);
+    group.rotation.y += (tx * max - group.rotation.y) * 0.08;
+    group.rotation.x += (ty * max * 0.6 - group.rotation.x) * 0.08;
+  }
+  renderer.render(scene, camera);
+  frames++;
+  if (now - last > 500) { document.getElementById("fps").textContent = Math.round(frames * 1000 / (now - last)); frames = 0; last = now; }
+  requestAnimationFrame(tick);
+}
+load(40000).then(() => requestAnimationFrame(tick)).catch(e => { document.getElementById("tele").textContent = e.message; });
+</script>
+</body>
+</html>
