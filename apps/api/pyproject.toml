@@ -1,0 +1,12 @@
+# Tool config only. Runtime deps live in requirements.txt (Vercel reads that file).
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]   # errors, pyflakes, isort, bugbear, pyupgrade
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -m \"not live\""
+markers = ["live: calls real LLM providers or Mizan; needs API keys (manual workflow only, D19)"]
