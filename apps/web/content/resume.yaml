@@ -2,33 +2,34 @@
 # the twin says is checked against this file).
 #
 # Rules:
-# - Nothing here is invented. A value we do not have yet is the literal string
-#   "TODO(content): ..." and is hidden from visitors until the owner fills it.
+# - Nothing here is invented. Facts come from the owner's CV (2025 edition) and his answers.
+#   A value we do not have yet is the literal string "TODO(content): ..." and is hidden
+#   from visitors until the owner fills it.
 # - Every number carries its context (what, where, how measured). No bare percentages.
-# - Spelling: Mohamed Ibrahim (D7).
+# - Spelling: Mohamed Ibrahim (D7). Phone number is never published.
 
 basics:
   name: Mohamed Ibrahim
   role: AI Engineer
-  # One sentence under the name in the hero. Carries the two strongest verified numbers (D15).
-  headline: "TODO(content): one sentence on what he builds, with two verified numbers"
-  location: "TODO(content): city, country"
+  # One sentence under the name in the hero. Restates CV facts only; wording awaiting owner approval.
+  headline: "I build agentic systems and computer vision pipelines that run in production: a bilingual agentic chatbot that answers in under a second, and a banknote counterfeit detector at 95% mAP."
+  location: New Cairo, Egypt
   email: mohamed.abdelwahed.ai@gmail.com
   links:
     github: https://github.com/MohamedIbraheem100
-    linkedin: "TODO(content): LinkedIn URL"
+    linkedin: https://www.linkedin.com/in/mohamed-ibrahim100
     site: https://mohamedibrahim.is-a.dev
   # Relocation / remote / availability, in his words. Also feeds faq.md for the twin.
   availability: "TODO(content): availability, remote, relocation"
 
 # Verified numbers only. Each one is rendered inside its project's scene, never as a stat row.
 highlights:
-  - value: "TODO(content): e.g. 95% mAP"
-    context: "TODO(content): which model, which dataset, how many classes/images"
+  - value: "95% mAP"
+    context: "Two specialized YOLO models (currency classification + counterfeit detection) for Egyptian banknotes in Cashy, the graduation project graded Excellent."
     project: cashy
-  - value: "TODO(content): e.g. 30% latency reduction"
-    context: "TODO(content): which system, p50/p95, before and after"
-    project: "TODO(content)"
+  - value: "30%+ latency reduction"
+    context: "Inference and retrieval pipeline of a bilingual agentic RAG chatbot at AL Master, bringing responses under one second."
+    project: al-master-chatbot
 
 experience:
   - company: H.Hunters
@@ -42,27 +43,34 @@ experience:
       - "TODO(content): achievement with number"
       - "TODO(content): achievement with number"
     public_notes: "TODO(content): what may NOT be said publicly"
-  - company: AL Master
-    title: "TODO(content): title"
-    start: "TODO(content): YYYY-MM"
-    end: "TODO(content): YYYY-MM"
-    location: "TODO(content)"
+  - company: AL Master IT Solutions
+    title: AI Engineer
+    start: "2026-04"
+    end: "TODO(content): YYYY-MM (CV still says present; confirm against the H.Hunters start)"
+    location: "TODO(content): city / remote"
     impact:
-      - "TODO(content)"
-  - company: NTI
-    title: "TODO(content): title"
-    start: "TODO(content): YYYY-MM"
-    end: "TODO(content): YYYY-MM"
-    location: "TODO(content)"
+      - "Architected and deployed a production bilingual agentic chatbot for real customer interactions."
+      - "Built agentic RAG workflows with LangGraph on FastAPI, Redis, PostgreSQL and a vector database, with authentication, rate limiting and API defenses."
+      - "Cut inference and retrieval latency by 30%+, bringing responses under one second."
+      - "Added conversation persistence and CRM automation for tracking."
+  - company: National Telecommunication Institute (NTI)
+    title: AI Engineering Trainee, Advanced Computer Vision
+    start: "2026-01"
+    end: "2026-04"
+    location: Egypt
     impact:
-      - "TODO(content)"
-  - company: Watanya
-    title: "TODO(content): title"
-    start: "TODO(content): YYYY-MM"
-    end: "TODO(content): YYYY-MM"
-    location: "TODO(content)"
+      - "End-to-end computer vision pipelines for classification, detection and segmentation."
+      - "Evaluated CNNs, Vision Transformers and multimodal models; built GANs, autoencoders and diffusion models for image synthesis."
+      - "LLM-driven agents with LangGraph for orchestration and task routing; capstone: SpotLight."
+  - company: Watanya Company for Roads (military service)
+    title: IT Engineer
+    start: "2024-12"
+    end: "2025-11"
+    location: Egypt
     impact:
-      - "TODO(content)"
+      - "Operated IP surveillance systems (NVRs, CCTV, RTSP streams) across multiple sites."
+      - "Supported integration of face and license plate recognition with live camera feeds."
+      - "Troubleshot system and network issues; managed storage and database operations for continuous monitoring."
 
 projects:
   - slug: mizan
@@ -80,37 +88,51 @@ projects:
     demo: live            # live | video | case-study
   - slug: cashy
     name: Cashy
-    one_liner: "TODO(content): currency classifier and counterfeit detector, in one sentence"
-    role: "TODO(content)"
-    stack: [YOLO, ONNX, ONNX Runtime Web]
+    one_liner: "Mobile app that identifies Egyptian banknotes and flags counterfeits in real time, with two YOLO models at 95% mAP."
+    role: "Graduation project, Fayoum University (grade: Excellent). TODO(content): team size and your part"
+    stack: [YOLO, TensorFlow Lite, OpenCV, Flask]
     results:
-      - "TODO(content)"
-    what_failed: "TODO(content)"
+      - "Two specialized YOLO models (classification + counterfeit detection) reaching 95% mAP."
+      - "Converted to TensorFlow Lite for low-latency on-device inference; OpenCV preprocessing extracts forensic features for verification."
+    what_failed: "TODO(content): one thing that failed and why"
     links:
       repo: "TODO(content): repo URL or none"
     demo: live
   - slug: spotlight
     name: SpotLight
-    one_liner: "TODO(content): ad insertion into video, in one sentence"
-    role: "TODO(content)"
-    stack: [Qwen2.5-VL, OWLv2, SAM2, Homography, Stable Diffusion inpainting]
+    one_liner: "Inserts advertisements into existing video (films, series, football) so they sit on real surfaces instead of floating."
+    role: "Capstone project at NTI. TODO(content): team size and your part"
+    stack: [Qwen2.5-VL 7B, OWLv2, SAM2, OpenCV homography, Stable Diffusion inpainting]
     results:
-      - "TODO(content)"
-    what_failed: "TODO(content)"
+      - "Qwen2.5-VL for scene understanding, OWLv2 for surface detection, SAM2 for pixel-accurate foreground tracking across all frames."
+      - "Perspective homography warps the ad to the surface angle; Stable Diffusion inpainting blends edges on walls, screens, grass and tables."
+      - "Runs on limited GPUs through 4-bit quantization and sequential VRAM management."
+    what_failed: "TODO(content): one thing that failed and why"
     links:
       repo: "TODO(content)"
     demo: video
   - slug: storytelling-agent
     name: Storytelling Agent
-    one_liner: "TODO(content): in one sentence"
+    one_liner: "Multi-agent system that turns an idea into an illustrated story: a writing agent and an image-prompt agent, routed autonomously."
     role: "TODO(content)"
-    stack: ["TODO(content)"]
+    stack: ["TODO(content): LLM / image model / framework"]
     results:
-      - "TODO(content)"
+      - "Autonomous routing between story writing and image prompt engineering; narrative themes become visual scene descriptors; interactive dashboard renders story and images together."
     what_failed: "TODO(content)"
     links:
       repo: "TODO(content)"
     demo: video
+  - slug: al-master-chatbot
+    name: Bilingual agentic chatbot (AL Master)
+    one_liner: "Production agentic RAG chatbot for customer interactions in Arabic and English, answering in under a second."
+    role: AI Engineer, architecture and deployment
+    stack: [LangGraph, FastAPI, Redis, PostgreSQL, Vector database]
+    results:
+      - "30%+ lower inference and retrieval latency, sub-second responses."
+      - "Authentication, rate limiting and API defenses; conversation persistence; CRM automation."
+    what_failed: "TODO(content)"
+    links: {}
+    demo: case-study
   - slug: h-hunters
     name: H.Hunters
     one_liner: "TODO(content): architecture-level description, no client data"
@@ -123,19 +145,26 @@ projects:
     demo: case-study
 
 education:
-  - institution: "TODO(content)"
-    degree: "TODO(content)"
-    start: "TODO(content): YYYY"
-    end: "TODO(content): YYYY"
+  - institution: Fayoum University
+    degree: "BSc in Computers and Artificial Intelligence (graduation project Cashy, grade: Excellent)"
+    start: "2020"
+    end: "2024"
 
 # Grouped, no percentages, no logos. Only things used in the projects above.
 skills:
-  - group: Computer vision
-    items: ["TODO(content)"]
   - group: Agents and LLM systems
-    items: ["TODO(content)"]
-  - group: Engineering
-    items: ["TODO(content)"]
+    items: [LLMs, Agentic AI, RAG, LangGraph, LangChain, Prompt engineering]
+  - group: Computer vision
+    items: [Object detection, Segmentation, Vision Transformers, Multimodal models, YOLO, SAM2, OpenCV]
+  - group: Deep learning
+    items: [PyTorch, TensorFlow, CNNs, GANs, Diffusion models]
+  - group: Backend and deployment
+    items: [FastAPI, Flask, Docker, REST APIs, PostgreSQL, Redis, MongoDB, MySQL]
+
+certificates:
+  - name: Advanced Computer Vision Track
+    issuer: National Telecommunication Institute (NTI)
+    year: "2026"
 
 languages:
   - language: Arabic

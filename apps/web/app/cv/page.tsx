@@ -14,10 +14,11 @@ export const CV_PDF_URL =
   "https://github.com/MohamedIbraheem100/portfolio/releases/download/cv-latest/Mohamed-Ibrahim-CV.pdf";
 
 const show = (v: string | null | undefined): v is string => Boolean(v) && !isTodo(v);
-const period = (start: string, end: string | null) =>
-  `${show(start) ? start : ""}${show(start) || show(end) || end === null ? " to " : ""}${
-    end === null ? "present" : show(end) ? end : ""
-  }`.trim();
+const period = (start: string, end: string | null) => {
+  const from = show(start) ? start : "";
+  const to = end === null ? "present" : show(end) ? end : "";
+  return from && to ? `${from} to ${to}` : from || to;
+};
 
 function ExperienceItem({ job }: { job: Experience }) {
   const impact = job.impact.filter(show);
@@ -87,6 +88,7 @@ export default async function CvPage() {
   const skills = resume.skills.filter((g) => g.items.some(show));
   const education = resume.education.filter((e) => show(e.institution));
   const languages = resume.languages.filter((l) => show(l.level));
+  const certificates = resume.certificates.filter((c) => show(c.name));
 
   return (
     <article className="mx-auto w-full max-w-site px-4 py-12 md:px-8 md:py-16 print:p-0">
@@ -159,6 +161,20 @@ export default async function CvPage() {
                   {show(e.degree) ? `${e.degree}, ` : ""}
                   {e.institution}
                 </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {certificates.length > 0 && (
+        <section className="mt-14">
+          <h2 className="font-display text-h3 font-medium">Certificates</h2>
+          <ul className="mt-4 space-y-2">
+            {certificates.map((c) => (
+              <li key={c.name}>
+                {c.name}, {c.issuer}
+                {show(c.year) ? ` (${c.year})` : ""}
               </li>
             ))}
           </ul>
