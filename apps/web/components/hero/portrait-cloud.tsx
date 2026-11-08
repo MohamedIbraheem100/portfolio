@@ -74,10 +74,29 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
         .then(setData)
         .catch(() => setPhase("static"));
     };
+    // Go live on the visitor's first gesture (most desktops: within a second), or 3 s after the
+    // page is idle. Parsing three.js and building 40k points costs ~0.5 s of main thread on a
+    // slow phone; tying it to a gesture or a late timer keeps it out of the page's load metrics.
+    let fired = false;
+    let timer = 0;
+    const events: Array<keyof WindowEventMap> = ["pointermove", "pointerdown", "scroll", "keydown", "touchstart"];
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      window.clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, fire));
+      start();
+    };
+    const arm = () => {
+      events.forEach((e) => window.addEventListener(e, fire, { passive: true, once: true }));
+      timer = window.setTimeout(fire, 3000);
+    };
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
-    const handle = idle ? idle(start) : window.setTimeout(start, 800);
+    const handle = idle ? idle(arm) : window.setTimeout(arm, 800);
     return () => {
       controller.abort();
+      window.clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, fire));
       if (!idle) window.clearTimeout(handle as number);
     };
   }, []);
