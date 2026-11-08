@@ -13,9 +13,9 @@ const base =
 */
 const variants: Record<Variant, string> = {
   primary:
-    "h-12 px-5 rounded-box bg-amber text-night hover:bg-[#ffc14a] active:bg-[#e69e1a]",
+    "btn-sheen relative overflow-hidden h-12 px-5 rounded-box bg-amber text-night hover:bg-[#ffc14a] active:bg-[#e69e1a] active:scale-[0.98]",
   quiet:
-    "h-10 px-4 rounded-box border border-phosphor/30 text-phosphor hover:border-amber hover:text-amber",
+    "h-10 px-4 rounded-box border border-phosphor/30 text-phosphor hover:border-amber hover:text-amber active:scale-[0.98]",
   text: "font-body underline decoration-dim/60 underline-offset-4 hover:decoration-amber hover:text-amber",
 };
 

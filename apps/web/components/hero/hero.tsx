@@ -1,7 +1,6 @@
 import { preload } from "react-dom";
 import { ButtonLink } from "@/components/ui/button-link";
 import { PortraitCloud } from "@/components/hero/portrait-cloud";
-import { NeuralField } from "@/components/hero/neural-field";
 import { CV_PDF_URL } from "@/lib/cv";
 import type { Resume } from "@/lib/resume";
 import { isTodo } from "@/lib/resume";
@@ -31,9 +30,7 @@ export function Hero({ resume }: { resume: Resume }) {
   });
 
   return (
-    <section className="relative isolate overflow-hidden">
-      {/* D28: live background, behind everything in the hero only. */}
-      <NeuralField className="absolute inset-0 -z-10 h-full w-full" />
+    <section className="relative">
       <div className="mx-auto w-full max-w-site px-4 pb-20 pt-6 md:px-8 md:pb-28 md:pt-16">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:items-center md:gap-8">
           <div className="md:col-span-5">
@@ -52,7 +49,7 @@ export function Hero({ resume }: { resume: Resume }) {
             </div>
           </div>
 
-          <figure className="relative md:col-span-7">
+          <figure className="relative isolate md:col-span-7">
             {/* Soft lift behind the portrait so the cloud sits in a pool of light, not on flat night. */}
             <div
               aria-hidden="true"

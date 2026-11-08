@@ -1,4 +1,5 @@
 import { ButtonLink } from "@/components/ui/button-link";
+import { DetectOnView } from "@/components/work/detect-on-view";
 import { isTodo, type Project, type Resume } from "@/lib/resume";
 
 /*
@@ -68,6 +69,7 @@ function Scene({ project, index }: { project: Project; index: number }) {
 
       {visual && (
         <figure className={`md:col-span-7 ${flip ? "md:order-1" : ""}`}>
+          <DetectOnView label={`${project.slug} · ${project.demo === "live" ? "live demo" : project.demo}`}>
           <a
             href={visual.href ?? live ?? "#"}
             target="_blank"
@@ -85,6 +87,7 @@ function Scene({ project, index }: { project: Project; index: number }) {
               className="block h-auto w-full rounded-box"
             />
           </a>
+          </DetectOnView>
         </figure>
       )}
     </article>
