@@ -1,13 +1,15 @@
 import { preload } from "react-dom";
 import { ButtonLink } from "@/components/ui/button-link";
+import { PortraitCloud } from "@/components/hero/portrait-cloud";
 import { CV_PDF_URL } from "@/lib/cv";
 import type { Resume } from "@/lib/resume";
 import { isTodo } from "@/lib/resume";
 
 /*
-  W1 hero: text block (5 cols) + static still of the mono point cloud (7 cols).
-  The still is rendered offline by tools/render_still.py from the same point
-  data the live cloud (W5) will use, so the swap later is visual only.
+  Hero: text block (5 cols) + the portrait (7 cols). The static still (rendered
+  offline by tools/render_still.py) is the LCP element and the fallback; after
+  the page is idle, PortraitCloud replaces it with the live point cloud built
+  from the same data (W5), when the device and the visitor's settings allow.
 
   CTAs follow D21 once the features exist: primary becomes "Screen my CV
   against your role" (W3) and the secondary "Ask my AI twin" (W2). Until then
@@ -31,6 +33,7 @@ export function Hero({ resume }: { resume: Resume }) {
     <section className="mx-auto w-full max-w-site px-4 pb-20 pt-6 md:px-8 md:pb-28 md:pt-16">
       <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:items-center md:gap-8">
         <figure className="relative md:order-2 md:col-span-7">
+          <PortraitCloud>
           {/* Static still (two sizes, already WebP). Plain <img> on purpose: no optimizer pass,
               no layout shift (explicit ratio), highest fetch priority since it is the LCP element. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -45,14 +48,15 @@ export function Hero({ resume }: { resume: Resume }) {
             decoding="async"
             className="block h-auto w-full"
           />
-          {/* Detector motif: amber corner brackets. Static here; in W5 the box locks on after
-              the points assemble. No confidence value is shown because none is measured yet. */}
+          {/* Detector motif on the still: amber corner brackets. When the cloud goes live,
+              the detection box takes over with measured telemetry. */}
           <span aria-hidden="true" className="pointer-events-none absolute inset-0">
             <span className="absolute left-0 top-0 h-5 w-5 border-l-2 border-t-2 border-amber" />
             <span className="absolute right-0 top-0 h-5 w-5 border-r-2 border-t-2 border-amber" />
             <span className="absolute bottom-0 left-0 h-5 w-5 border-b-2 border-l-2 border-amber" />
             <span className="absolute bottom-0 right-0 h-5 w-5 border-b-2 border-r-2 border-amber" />
           </span>
+          </PortraitCloud>
         </figure>
 
         <div className="md:order-1 md:col-span-5">

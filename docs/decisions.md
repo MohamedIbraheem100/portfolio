@@ -149,3 +149,12 @@ Folded into CLAUDE.md once the list is complete.
 - The inferno ramp remains reserved for real model outputs (Lab heatmaps, detections), per the token rules.
 - Numbers from the prototype: 40k points, 1.6 s assemble, 45 to 144 fps on an integrated AMD GPU
   depending on point size; point size vs density is tuned in W5.
+
+## D27. Point data ships from public/ as compact PCP3 files (amends D3 for the portrait)
+- `tools/pack_points.py` packs PCP2 into 6 bytes per point (int16 x,y + depth byte + luma byte):
+  40k points = 234 KB, 20k = 117 KB. Small enough to live in `apps/web/public/` and be cached by
+  Vercel's CDN; no Hugging Face hop for the hero. Videos and ONNX models still follow D3.
+- The live hero (W5) loads the 40k file on fine pointers and the 20k file on coarse ones, after
+  the page is idle; the static still stays the LCP element and the fallback.
+- Telemetry in the detection box is measured (point count, assemble ms, fps). No confidence value
+  is shown because no detector ran; motion rule 1's "confidence" is satisfied with real numbers only.
