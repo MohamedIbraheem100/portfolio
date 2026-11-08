@@ -4,14 +4,40 @@
     {
       "name": "web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "apps/web"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "apps/web"
+      ],
       "port": 3000
     },
     {
       "name": "api",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "uvicorn", "portfolio_api.main:app", "--reload", "--port", "8000", "--app-dir", "apps/api"],
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "portfolio_api.main:app",
+        "--reload",
+        "--port",
+        "8000",
+        "--app-dir",
+        "apps/api"
+      ],
       "port": 8000
+    },
+    {
+      "name": "prototype",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "3200",
+        "--directory",
+        "tools/prototype"
+      ],
+      "port": 3200
     }
   ]
 }
