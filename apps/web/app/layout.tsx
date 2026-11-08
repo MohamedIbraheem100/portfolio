@@ -5,6 +5,7 @@ import { site } from "@/lib/site";
 import { SiteHeader } from "@/components/ui/site-header";
 import { SiteFooter } from "@/components/ui/site-footer";
 import { PersonJsonLd } from "@/components/seo/person-jsonld";
+import { SmoothScroll } from "@/components/motion/smooth-scroll";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </main>
         <SiteFooter />
         <PersonJsonLd />
+        <SmoothScroll />
         <Analytics />
       </body>
     </html>
