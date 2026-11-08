@@ -33,8 +33,8 @@ highlights:
 
 experience:
   - company: H.Hunters
-    title: "TODO(content): title"
-    start: "TODO(content): YYYY-MM"
+    title: AI Engineer
+    start: "2026-08"
     end: null            # null = present
     location: "TODO(content)"
     # Impact, not duties. 3-4 lines with numbers. Architecture and decisions only,
@@ -46,7 +46,7 @@ experience:
   - company: AL Master IT Solutions
     title: AI Engineer
     start: "2026-04"
-    end: "TODO(content): YYYY-MM (CV still says present; confirm against the H.Hunters start)"
+    end: "2026-07"
     location: "TODO(content): city / remote"
     impact:
       - "Architected and deployed a production bilingual agentic chatbot for real customer interactions."
