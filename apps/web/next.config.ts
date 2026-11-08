@@ -18,8 +18,6 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  // The OG image reads a font file at request time; make sure it ships with the function.
-  outputFileTracingIncludes: { "/opengraph-image": ["./lib/og/**"] },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${API_URL}/:path*` }];
   },
