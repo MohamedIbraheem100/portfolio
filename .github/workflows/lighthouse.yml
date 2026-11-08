@@ -1,7 +1,7 @@
 name: Lighthouse
 
 # D25: runs against a local production build, not the Vercel preview, so the
-# result does not depend on deploy timing. Mobile preset, 3 runs, median scored.
+# result does not depend on deploy timing. Mobile (Lighthouse default), 3 runs, median scored.
 # Fails the PR when mobile Performance drops below 85 (CLAUDE.md quality bar).
 
 on:

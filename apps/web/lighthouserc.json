@@ -4,10 +4,7 @@
       "startServerCommand": "npm start",
       "startServerReadyPattern": "Ready in",
       "url": ["http://localhost:3000/", "http://localhost:3000/cv"],
-      "numberOfRuns": 3,
-      "settings": {
-        "preset": "mobile"
-      }
+      "numberOfRuns": 3
     },
     "assert": {
       "assertions": {
