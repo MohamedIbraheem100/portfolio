@@ -10,8 +10,9 @@ import type { PointData } from "@/lib/pcp3";
   The live hero (W5). Same look as tools/prototype (D26 mono palette, halftone
   sizing, jittered-grid points), rendered with three.js through R3F.
 
-  Motion rule 1: on load, scattered points assemble into the portrait in 1.6 s
-  (GSAP drives the uAssemble uniform). Motion rule 2: cursor parallax up to 8
+  Sequence (motion rule 1): the cloud first appears already assembled, pixel-
+  matched to the still, so the swap is invisible; then it disintegrates (0.6 s)
+  and reassembles (1.6 s, GSAP on uAssemble), and the detection box locks on. Motion rule 2: cursor parallax up to 8
   degrees, lerped. Everything is a uniform or an attribute: no per-frame JS
   over the points. three.js objects are created once in a lazy state initializer and
   disposed on unmount, which keeps the component pure for the React Compiler.
@@ -23,8 +24,7 @@ const VERT = /* glsl */ `
   attribute float aLuma;
   uniform float uAssemble;
   uniform float uRelief;
-  uniform float uSize;
-  uniform float uDpr;
+  uniform float uBase;   // point diameter in device px for a mid-tone, far point (canvas-relative)
   varying float vDepth;
   varying float vLuma;
   float easeOutCubic(float t) { return 1.0 - pow(1.0 - t, 3.0); }
@@ -36,8 +36,9 @@ const VERT = /* glsl */ `
     vDepth = aDepth;
     vLuma = aLuma;
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
-    float lum = pow(aLuma, 0.7);
-    gl_PointSize = uSize * uDpr * (2.2 / -mv.z) * (0.8 + 0.4 * aDepth) * (0.45 + 0.9 * lum);
+    // Same halftone law as the still: bigger where the photo is brighter and nearer.
+    float lum = min(pow(aLuma, 0.7), 0.92);
+    gl_PointSize = uBase * (0.45 + 0.9 * lum) * (0.8 + 0.4 * aDepth);
     gl_Position = projectionMatrix * mv;
   }
 `;
@@ -75,7 +76,7 @@ function seeded(seed: number): () => number {
   };
 }
 
-function buildScene(data: PointData, dpr: number) {
+function buildScene(data: PointData) {
   const n = data.count;
   const pos = new Float32Array(n * 3);
   const start = new Float32Array(n * 3);
@@ -84,12 +85,17 @@ function buildScene(data: PointData, dpr: number) {
     pos[i * 3] = data.xy[i * 2];
     pos[i * 3 + 1] = data.xy[i * 2 + 1];
     pos[i * 3 + 2] = 0;
-    const r = 1.6 + rnd() * 1.4;
-    const th = rnd() * Math.PI * 2;
-    const ph = Math.acos(2 * rnd() - 1);
-    start[i * 3] = r * Math.sin(ph) * Math.cos(th);
-    start[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th) * 0.8;
-    start[i * 3 + 2] = r * Math.cos(ph) * 0.6 - 0.4;
+    // Directed burst: each point leaves along its own radial direction with a depth-dependent
+    // push toward the viewer (near points come forward, far points fall back) plus noise, so the
+    // disintegration reads as a 3D object coming apart rather than confetti.
+    const x = pos[i * 3];
+    const y = pos[i * 3 + 1];
+    const d = data.depth[i];
+    const len = Math.hypot(x, y) + 1e-3;
+    const spread = 0.9 + rnd() * 1.1;
+    start[i * 3] = x + (x / len) * spread * 0.9 + (rnd() - 0.5) * 0.6;
+    start[i * 3 + 1] = y + (y / len) * spread * 0.7 + (rnd() - 0.5) * 0.6;
+    start[i * 3 + 2] = (d - 0.35) * 2.6 + (rnd() - 0.5) * 0.8;
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(pos, 3));
@@ -102,10 +108,9 @@ function buildScene(data: PointData, dpr: number) {
     transparent: true,
     depthWrite: false,
     uniforms: {
-      uAssemble: { value: 0 },
+      uAssemble: { value: 1 },
       uRelief: { value: 0.35 },
-      uSize: { value: 3.0 },
-      uDpr: { value: dpr },
+      uBase: { value: 2 },
     },
   });
   return { geometry, material };
@@ -125,21 +130,30 @@ function Cloud({ data, parallax, onFirstFrame, onAssembled }: Props) {
   const first = useRef(false);
   const target = useRef({ x: 0, y: 0 });
   // Built once per data set (lazy initializer); never rebuilt on re-render.
-  const [{ geometry, material }] = useState(() =>
-    buildScene(data, Math.min(window.devicePixelRatio || 1, 1.5)),
-  );
+  const [{ geometry, material }] = useState(() => buildScene(data));
+  // Per-frame uniform writes go through a ref: three.js objects are mutable by nature, and
+  // the React Compiler only allows that outside render through refs.
+  const uniforms = useRef<THREE.ShaderMaterial["uniforms"] | null>(null);
+  useEffect(() => {
+    uniforms.current = material.uniforms;
+  }, [material]);
 
   useEffect(() => {
-    const t0 = performance.now();
-    const tween = gsap.to(material.uniforms.uAssemble, {
-      value: 1,
-      duration: 1.6,
-      ease: "power3.out",
-      delay: 0.15,
-      onComplete: () => onAssembled(Math.round(performance.now() - t0)),
-    });
+    const g = group.current;
+    if (!g) return;
+    let t0 = 0;
+    const tl = gsap
+      .timeline({ delay: 0.45 }) // after the crossfade from the still
+      .to(material.uniforms.uAssemble, { value: 0, duration: 0.6, ease: "power2.in" }, 0)
+      .to(g.rotation, { y: -0.22, x: 0.06, duration: 0.6, ease: "power2.in" }, 0)
+      .call(() => {
+        t0 = performance.now();
+      })
+      .to(material.uniforms.uAssemble, { value: 1, duration: 1.6, ease: "power3.out" }, ">")
+      .to(g.rotation, { y: 0, x: 0, duration: 1.6, ease: "power3.out" }, "<")
+      .call(() => onAssembled(Math.round(performance.now() - t0)));
     return () => {
-      tween.kill();
+      tl.kill();
     };
   }, [material, onAssembled]);
 
@@ -161,7 +175,12 @@ function Cloud({ data, parallax, onFirstFrame, onAssembled }: Props) {
     [geometry, material],
   );
 
-  useFrame(() => {
+  useFrame((state) => {
+    // Keep the point size proportional to the canvas, like the still: diameter = devicePx/1000 * 2.1.
+    const devicePx = state.size.width * state.viewport.dpr;
+    const base = (devicePx / 1000) * 2.1;
+    const u = uniforms.current;
+    if (u && u.uBase.value !== base) u.uBase.value = base;
     const g = group.current;
     if (g && parallax) {
       g.rotation.y += (target.current.x * MAX_TILT - g.rotation.y) * 0.08;

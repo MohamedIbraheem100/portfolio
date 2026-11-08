@@ -43,34 +43,58 @@ export async function loadPoints(url: string, signal?: AbortSignal): Promise<Poi
   return parsePcp3(await res.arrayBuffer());
 }
 
-/** Bounding box of the head region (top part of the cloud) as fractions of the cloud's frame. */
+/**
+ * Bounding box of the head, as fractions of the cloud's frame.
+ * The head is found from the width profile of the cloud: scanning down from the top, the
+ * silhouette widens (forehead to cheeks), narrows (jaw to neck), then widens again
+ * (shoulders). The neck, the narrowest row after the head's widest row, is the box bottom.
+ */
 export function headBox(data: PointData): { left: number; top: number; width: number; height: number } {
   const { xy, count, aspect } = data;
-  // y spans [-1/aspect, 1/aspect] for a landscape cloud (aspect >= 1).
   const yMax = aspect >= 1 ? 1 / aspect : 1;
-  const yMin = -yMax;
-  const cut = yMin + 0.52 * (yMax - yMin); // head: the top 48% of the cloud's height
+  const xMax = aspect >= 1 ? 1 : aspect;
+  const BINS = 48;
+  const minX = new Float32Array(BINS).fill(Infinity);
+  const maxX = new Float32Array(BINS).fill(-Infinity);
+  const hits = new Uint32Array(BINS);
+  for (let i = 0; i < count; i++) {
+    const x = xy[i * 2];
+    const y = xy[i * 2 + 1];
+    const b = Math.min(BINS - 1, Math.max(0, Math.floor(((yMax - y) / (2 * yMax)) * BINS)));
+    hits[b]++;
+    if (x < minX[b]) minX[b] = x;
+    if (x > maxX[b]) maxX[b] = x;
+  }
+  const width = (b: number) => (hits[b] > 20 ? maxX[b] - minX[b] : 0);
+  let top = 0;
+  while (top < BINS && width(top) === 0) top++;
+  // widest row within the upper half = the head's cheeks/ears
+  let headMax = top;
+  for (let b = top; b < BINS / 2; b++) if (width(b) > width(headMax)) headMax = b;
+  // narrowest row after that = the neck
+  let neck = headMax;
+  for (let b = headMax; b < Math.min(BINS - 1, headMax + BINS / 2); b++) {
+    if (width(b) < width(neck)) neck = b;
+    if (width(b) > width(neck) * 1.25 && b > neck + 1) break; // shoulders started
+  }
   const xs: number[] = [];
-  let top = -Infinity;
   for (let i = 0; i < count; i++) {
     const y = xy[i * 2 + 1];
-    if (y > cut) {
-      xs.push(xy[i * 2]);
-      if (y > top) top = y;
-    }
+    const b = Math.floor(((yMax - y) / (2 * yMax)) * BINS);
+    if (b >= top && b <= neck) xs.push(xy[i * 2]);
   }
   if (xs.length === 0) return { left: 0.3, top: 0.05, width: 0.4, height: 0.5 };
   xs.sort((a, b) => a - b);
-  const lo = xs[Math.floor(xs.length * 0.02)];
-  const hi = xs[Math.floor(xs.length * 0.98)];
-  const xMax = aspect >= 1 ? 1 : aspect;
+  const lo = xs[Math.floor(xs.length * 0.01)];
+  const hi = xs[Math.floor(xs.length * 0.99)];
   const toX = (x: number) => (x + xMax) / (2 * xMax);
-  const toY = (y: number) => (yMax - y) / (2 * yMax);
-  const pad = 0.025;
+  const pad = 0.02;
+  const topF = top / BINS;
+  const bottomF = (neck + 1) / BINS;
   return {
     left: Math.max(0, toX(lo) - pad),
-    top: Math.max(0, toY(top) - pad),
+    top: Math.max(0, topF - pad),
     width: Math.min(1, toX(hi) - toX(lo) + 2 * pad),
-    height: Math.min(1, toY(cut) - toY(top) + 2 * pad),
+    height: Math.min(1, bottomF - topF + 2 * pad),
   };
 }
