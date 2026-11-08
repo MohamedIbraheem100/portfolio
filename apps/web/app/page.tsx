@@ -1,5 +1,6 @@
 import { cacheLife } from "next/cache";
 import { Hero } from "@/components/hero/hero";
+import { SelectedWork } from "@/components/work/selected-work";
 import { loadResume } from "@/lib/resume";
 
 /*
@@ -11,5 +12,10 @@ export default async function Home() {
   "use cache";
   cacheLife("days");
   const resume = loadResume();
-  return <Hero resume={resume} />;
+  return (
+    <>
+      <Hero resume={resume} />
+      <SelectedWork resume={resume} />
+    </>
+  );
 }
