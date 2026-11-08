@@ -12,7 +12,8 @@ Anything missing at build time becomes a visible `TODO(content)` in the code, ne
       - "95% mAP": which model, which dataset, how many classes/images?
       - "30%+ latency reduction": which system, measured how (p50/p95), before and after?
       - Any other number you want on the site.
-- [ ] Email, LinkedIn URL, GitHub URL to show publicly.
+- [x] Email (settled). GitHub (settled).
+- [ ] LinkedIn URL to show publicly.
 - [ ] Test devices you have access to: iPhone (Safari), Android (Chrome), Mac?
 
 ## Needed before W2 (AI Twin)
