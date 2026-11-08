@@ -158,3 +158,20 @@ Folded into CLAUDE.md once the list is complete.
   the page is idle; the static still stays the LCP element and the fallback.
 - Telemetry in the detection box is measured (point count, assemble ms, fps). No confidence value
   is shown because no detector ran; motion rule 1's "confidence" is satisfied with real numbers only.
+
+## D28. Hero background: live neural field (owner's call, 2026-11-08)
+- The owner found the flat night hero dull and asked for a dynamic, AI-related background. Added
+  `components/hero/neural-field.tsx`: sparse nodes joined by faint phosphor threads (alpha <= 0.16),
+  drifting slowly, rare signal pulses along threads, nodes near the cursor light amber and link to it.
+  Hero section only. Reduced motion: one static frame. Pauses off-screen and in hidden tabs.
+- This is a deliberate exception to motion rule 3 (ambient motion) limited to the hero background;
+  it stays far below the content in contrast so the portrait and the text keep the attention.
+- Also: a soft radial lift (night-raised) behind the portrait.
+
+## D29. Hero goes live on every WebGL device; text first on mobile (amends D17 and the W5 plan)
+- Owner: a static still on phones is not acceptable. Touch devices now run the cloud with 20k points,
+  no parallax, starting on the first touch/scroll or 2.2 s after load (keeps the mobile load metrics
+  clean). Desktop starts immediately. Only reduced motion / no WebGL keep the still.
+- Mobile order is now name, role, headline, CTAs, then the portrait (the cloud appears a moment
+  later, below the fold of the first read).
+- The cursor-drift effect (points pulled toward the cursor) was removed: it deformed the face.

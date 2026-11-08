@@ -8,14 +8,15 @@ import { headBox, loadPoints, type PointData } from "@/lib/pcp3";
   Progressive hero (W5).
 
   A tiny inline script in <head> (app/layout.tsx) decides before first paint:
-  fine pointer + WebGL + no reduced-motion  ->  <html class="hero-live">.
-  CSS then hides the still from the very first frame, so a capable desktop
-  never sees a static image: the name is there and the portrait condenses out
-  of dust as soon as the point data and three.js arrive (both start loading
-  immediately; the script also preloads the point file).
+  WebGL + no reduced-motion  ->  <html class="hero-live" data-hero-mode="desktop|touch">.
+  CSS then hides the still from the very first frame, so a live device never
+  sees a static image: the amber frame is there, and the portrait condenses out
+  of dust inside it.
 
-  Everyone else (phones, reduced motion, no WebGL) gets the still, which is
-  also the LCP element Lighthouse measures on mobile.
+  - desktop: 40k points, loads immediately, cursor parallax.
+  - touch:   20k points, no parallax, starts on the first scroll or touch
+             (keeps the work out of the mobile load metrics).
+  - reduced motion / no WebGL: the still.
 
   After the assemble: one amber sweep, then the box locks onto the head with
   measured telemetry only (point count, assemble time, fps).
@@ -24,6 +25,7 @@ import { headBox, loadPoints, type PointData } from "@/lib/pcp3";
 const PointCloudPortrait = dynamic(() => import("@/three/PointCloudPortrait"), { ssr: false });
 
 type Phase = "static" | "loading" | "live" | "scan" | "locked";
+type Mode = "desktop" | "touch";
 
 function useFps(enabled: boolean): number {
   const [fps, setFps] = useState(0);
@@ -50,27 +52,49 @@ function useFps(enabled: boolean): number {
 export function PortraitCloud({ children }: { children: ReactNode }) {
   const figure = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>("static");
+  const [mode, setMode] = useState<Mode>("desktop");
   const [data, setData] = useState<PointData | null>(null);
   const [active, setActive] = useState(true);
   const [assembleMs, setAssembleMs] = useState<number | null>(null);
   const fps = useFps(phase === "live" || phase === "scan" || phase === "locked");
 
-  // Go live only where the head script said so; load the points at once.
+  // Go live only where the head script said so.
   useEffect(() => {
-    if (!document.documentElement.classList.contains("hero-live")) return;
+    const html = document.documentElement;
+    if (!html.classList.contains("hero-live")) return;
+    const m: Mode = html.dataset.heroMode === "touch" ? "touch" : "desktop";
     const controller = new AbortController();
+    let fired = false;
+    let timer = 0;
+    const gestures: Array<keyof WindowEventMap> = ["touchstart", "scroll", "pointerdown"];
     const start = () => {
+      if (fired) return;
+      fired = true;
+      window.clearTimeout(timer);
+      gestures.forEach((e) => window.removeEventListener(e, start));
+      setMode(m);
       setPhase("loading");
-      loadPoints("/portrait-40k.pcp3", controller.signal)
+      loadPoints(m === "touch" ? "/portrait-20k.pcp3" : "/portrait-40k.pcp3", controller.signal)
         .then(setData)
         .catch(() => {
-          document.documentElement.classList.remove("hero-live");
+          html.classList.remove("hero-live");
           setPhase("static");
         });
     };
-    const id = window.setTimeout(start, 0);
+    if (m === "desktop") {
+      timer = window.setTimeout(start, 0);
+    } else {
+      // Touch: the portrait sits below the first screen (text comes first), so it starts on the
+      // visitor's first scroll or touch, never on a timer or on mere visibility. That keeps the
+      // three.js work out of the mobile load metrics and makes the reveal feel earned.
+      const arm = () =>
+        gestures.forEach((e) => window.addEventListener(e, start, { passive: true, once: true }));
+      if (document.readyState === "complete") arm();
+      else window.addEventListener("load", arm, { once: true });
+    }
     return () => {
-      window.clearTimeout(id);
+      window.clearTimeout(timer);
+      gestures.forEach((e) => window.removeEventListener(e, start));
       controller.abort();
     };
   }, []);
@@ -114,12 +138,22 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
         <div className="absolute inset-0">
           <PointCloudPortrait
             data={data}
-            parallax
+            parallax={mode === "desktop"}
             active={active}
             onFirstFrame={onFirstFrame}
             onAssembled={onAssembled}
           />
         </div>
+      )}
+
+      {/* Frame: the detector's corner brackets, from first paint until the box takes over. */}
+      {phase !== "locked" && (
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <span className="absolute left-0 top-0 h-5 w-5 border-l-2 border-t-2 border-amber" />
+          <span className="absolute right-0 top-0 h-5 w-5 border-r-2 border-t-2 border-amber" />
+          <span className="absolute bottom-0 left-0 h-5 w-5 border-b-2 border-l-2 border-amber" />
+          <span className="absolute bottom-0 right-0 h-5 w-5 border-b-2 border-r-2 border-amber" />
+        </span>
       )}
 
       {/* Detector sweep: one pass over the portrait, then the box. */}
@@ -131,22 +165,33 @@ export function PortraitCloud({ children }: { children: ReactNode }) {
 
       {/* Detection box: locks on after the sweep; telemetry is measured, not invented. */}
       {box && (
-        <div
-          aria-hidden="true"
-          className="hero-box pointer-events-none absolute border-2 border-amber"
-          style={{
-            left: `${box.left * 100}%`,
-            top: `${box.top * 100}%`,
-            width: `${box.width * 100}%`,
-            height: `${box.height * 100}%`,
-          }}
-        >
-          <span className="absolute -top-6 left-0 whitespace-nowrap bg-amber px-1.5 py-0.5 font-mono text-[12px] leading-4 text-night">
+        <>
+          <div
+            aria-hidden="true"
+            className="hero-box pointer-events-none absolute border-2 border-amber"
+            style={{
+              left: `${box.left * 100}%`,
+              top: `${box.top * 100}%`,
+              width: `${box.width * 100}%`,
+              height: `${box.height * 100}%`,
+            }}
+          />
+          {/* Label sits on the box's top-left but is clamped to the figure, so it never overflows
+              on narrow screens (it truncates the fps first). */}
+          <span
+            aria-hidden="true"
+            className="hero-box pointer-events-none absolute -translate-y-full truncate bg-amber px-1.5 py-0.5 font-mono text-[11px] leading-4 text-night md:text-[12px]"
+            style={{
+              left: `${box.left * 100}%`,
+              top: `${box.top * 100}%`,
+              maxWidth: `${(1 - box.left) * 100}%`,
+            }}
+          >
             person · {data?.count.toLocaleString()} pts
             {assembleMs !== null ? ` · ${(assembleMs / 1000).toFixed(2)} s` : ""}
             {fps ? ` · ${fps} fps` : ""}
           </span>
-        </div>
+        </>
       )}
     </div>
   );
