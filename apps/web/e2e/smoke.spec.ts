@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 /*
   Smoke tests: every public page opens, the hero leads to Recruiter Mode, and the
@@ -32,6 +32,25 @@ const FIT_RESULT = {
 const sse = (events: [string, unknown][]) =>
   events.map(([event, data]) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`).join("");
 
+const RUBRIC_DONE = {
+  stage: "rubric",
+  status: "done",
+  job_title: "AI Engineer",
+  criteria: 2,
+  requirements: [
+    { name: "LangGraph in production", type: "must_have" },
+    { name: "Kubernetes", type: "nice_to_have" },
+  ],
+};
+
+/* Session token and warm-up are always answered locally; each test routes /api/fit itself. */
+async function mockApi(page: Page) {
+  await page.route("**/api/session", (route) =>
+    route.fulfill({ json: { token: "t.t.t", expires: 9999999999 } }),
+  );
+  await page.route("**/api/fit/warm", (route) => route.fulfill({ json: { warm: true } }));
+}
+
 test("home shows the name, the sections and the Recruiter Mode action", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Mohamed Ibrahim" })).toBeVisible();
@@ -63,16 +82,16 @@ test("an unknown address answers 404 in the detector's words", async ({ page }) 
 });
 
 test("Recruiter Mode: example fills the form, the report is evidence first", async ({ page }) => {
-  await page.route("**/api/session", (route) =>
-    route.fulfill({ json: { token: "t.t.t", expires: 9999999999 } }),
-  );
+  await mockApi(page);
   await page.route("**/api/fit", (route) =>
     route.fulfill({
       status: 200,
       contentType: "text/event-stream",
       body: sse([
         ["stage", { stage: "rubric", status: "running" }],
-        ["stage", { stage: "rubric", status: "done", job_title: "AI Engineer", criteria: 2 }],
+        ["stage", RUBRIC_DONE],
+        ["stage", { stage: "screening", status: "running" }],
+        ["stage", { stage: "screening", status: "done" }],
         ["progress", { node: "judge", status: "running" }],
         ["result", FIT_RESULT],
       ]),
@@ -98,12 +117,68 @@ test("Recruiter Mode: example fills the form, the report is evidence first", asy
   expect(order[0]).toBeLessThan(order[1]);
   expect(order[1]).toBeLessThan(order[2]);
   await expect(report.getByText("Powered by Mizan, which I built.")).toBeVisible();
+
+  // the finished checklist stays as the record of the run: every step done, the rubric named
+  const progress = page.getByRole("list", { name: "Progress" });
+  await expect(progress.getByRole("listitem")).toHaveCount(8);
+  await expect(progress.locator('li[data-status="done"]')).toHaveCount(8);
+  await expect(progress.getByText("Rubric: 2 requirements for AI Engineer")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Screening complete");
+  // no clocks or durations are shown to the visitor (FIT_RESULT.duration_ms is 4000)
+  await expect(page.getByText(/\d\.\d s\b/)).toHaveCount(0);
+  await expect(page.getByLabel("Requirements found in the role")).toHaveCount(0);
+});
+
+test("Recruiter Mode: the wait is narrated step by step and can be stopped", async ({ page }) => {
+  await mockApi(page);
+  // The stream opens, delivers the rubric and the first pipeline step, then stays open.
+  await page.addInitScript((body) => {
+    const original = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (!url.endsWith("/api/fit")) return original(input, init);
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(body));
+          init?.signal?.addEventListener("abort", () => controller.error(new DOMException("aborted", "AbortError")));
+        },
+      });
+      return Promise.resolve(new Response(stream, { headers: { "Content-Type": "text/event-stream" } }));
+    };
+  }, sse([
+    ["stage", { stage: "rubric", status: "running" }],
+    ["stage", RUBRIC_DONE],
+    ["stage", { stage: "screening", status: "running" }],
+    ["stage", { stage: "screening", status: "done" }],
+    ["progress", { node: "parse", status: "done" }],
+    ["progress", { node: "extract", status: "running" }],
+    ["progress", { node: "judge", status: "running" }],
+  ]));
+
+  await page.goto("/fit");
+  await page.getByRole("button", { name: "AI Engineer (agents)" }).click();
+  await page.getByRole("button", { name: "Screen my CV" }).click();
+
+  // the status line names the furthest step that is running
+  await expect(page.getByRole("status")).toHaveText("Judging each requirement");
+  const progress = page.getByRole("list", { name: "Progress" });
+  await expect(progress.locator('li[data-status="done"]')).toHaveCount(3);
+  await expect(progress.locator('li[data-status="running"]')).toHaveCount(2);
+  await expect(progress.locator('li[data-status="pending"]')).toHaveCount(3);
+  // the role's requirements are on screen long before the verdicts
+  const skeleton = page.getByLabel("Requirements found in the role");
+  await expect(skeleton.getByText("LangGraph in production")).toBeVisible();
+  await expect(skeleton.getByText("Kubernetes")).toBeVisible();
+  await expect(page.getByLabel("Fit report")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Stop" }).click();
+  await expect(progress).toHaveCount(0);
+  await expect(skeleton).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Screen my CV" })).toBeEnabled();
 });
 
 test("Recruiter Mode: when Mizan is unavailable there is a message and no score", async ({ page }) => {
-  await page.route("**/api/session", (route) =>
-    route.fulfill({ json: { token: "t.t.t", expires: 9999999999 } }),
-  );
+  await mockApi(page);
   await page.route("**/api/fit", (route) =>
     route.fulfill({
       status: 200,
@@ -119,5 +194,6 @@ test("Recruiter Mode: when Mizan is unavailable there is a message and no score"
   await page.getByRole("button", { name: "Screen my CV" }).click();
   await expect(page.getByText("Mizan is not available right now")).toBeVisible();
   await expect(page.getByLabel("Fit report")).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Progress" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Download CV" }).first()).toBeVisible();
 });

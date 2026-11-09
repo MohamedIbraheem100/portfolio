@@ -70,6 +70,13 @@ class MizanClient:
         self.internal_key = internal_key
         self.timeout = httpx.Timeout(timeout_s, connect=10.0)
 
+    def wake(self) -> bool:
+        """Best-effort health call to warm Mizan's function. True when it answered."""
+        try:
+            return httpx.get(f"{self.base_url}/health", timeout=6.0).status_code == 200
+        except httpx.HTTPError:
+            return False
+
     def rubric(self, jd_text: str) -> dict[str, Any]:
         try:
             resp = httpx.post(

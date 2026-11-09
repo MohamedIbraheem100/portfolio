@@ -76,6 +76,10 @@ class FakeMizan:
             ("result", MIZAN_RESULT),
         ]
 
+    def wake(self):
+        self.calls.append("wake")
+        return True
+
     def rubric(self, jd_text):
         self.calls.append("rubric")
         self.jds.append(jd_text)
@@ -129,9 +133,24 @@ def test_fit_streams_stages_progress_and_an_evidence_first_result(wiring):
     resp = post()
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/event-stream")
+    # without no-transform a compressing proxy buffers the stream and the steps arrive at once
+    assert "no-transform" in resp.headers["cache-control"]
     events = events_of(resp)
     kinds = [e for e, _ in events]
-    assert kinds[:2] == ["stage", "stage"] and kinds[-1] == "result"
+    assert kinds[:4] == ["stage"] * 4 and kinds[-1] == "result"
+    stages = [(p["stage"], p["status"]) for e, p in events if e == "stage"]
+    assert stages == [
+        ("rubric", "running"),
+        ("rubric", "done"),
+        ("screening", "running"),
+        ("screening", "done"),
+    ]
+    # the rubric's requirements arrive early, as the skeleton of the report
+    assert events[1][1]["requirements"] == [
+        {"name": "LangGraph in production", "type": "must_have"},
+        {"name": "Kubernetes", "type": "nice_to_have"},
+        {"name": "Computer vision", "type": "must_have"},
+    ]
     assert wiring["mizan"].calls == ["rubric", "screenings", "screen"]
     # the parse event's CV lines are not forwarded
     assert all("detail" not in p for e, p in events if e == "progress")
@@ -233,3 +252,18 @@ def test_parse_sse_lines_handles_multiple_blocks_and_garbage():
         ("progress", {"node": "judge"}),
         ("result", {"score": 1}),
     ]
+
+
+def test_warm_wakes_mizan_and_requires_origin(wiring):
+    assert client.get("/fit/warm").status_code == 403
+    resp = client.get("/fit/warm", headers=SITE)
+    assert resp.status_code == 200 and resp.json() == {"warm": True}
+    assert wiring["mizan"].calls == ["wake"]
+
+
+def test_warm_over_its_limit_stays_quiet(wiring, monkeypatch):
+    monkeypatch.setattr("portfolio_api.routes.fit.WARM_PER_VISITOR_PER_DAY", 1)
+    assert client.get("/fit/warm", headers=SITE).json() == {"warm": True}
+    resp = client.get("/fit/warm", headers=SITE)
+    assert resp.status_code == 200 and resp.json() == {"warm": False}
+    assert wiring["mizan"].calls == ["wake"]  # the second call never reached Mizan

@@ -6,8 +6,9 @@ the owner's CV, forwards progress, reshapes the result so evidence comes before 
 never stored or logged. If Mizan is unavailable the visitor gets a plain error event, never
 a made-up score.
 
-Stream:
+Stream (events arrive as each step happens, so the panel can narrate the wait):
     event: stage     {"stage": "rubric" | "screening", "status": "running" | "done", ...}
+                     rubric/done also carries job_title and requirements[{name, type}]
     event: progress  {"node": "extract" | "judge" | ..., "status": "running" | "done"}
     event: result    FitResult
     event: error     {"detail": "..."}
@@ -20,7 +21,7 @@ import re
 from collections.abc import Iterator
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from starlette.concurrency import iterate_in_threadpool
@@ -36,6 +37,9 @@ log = logging.getLogger("portfolio.fit")
 router = APIRouter(tags=["fit"])
 
 CANDIDATE_REF = "Mohamed Ibrahim"
+# The warm-up is one health call to Mizan; the cap only stops it being used as a relay.
+WARM_PER_VISITOR_PER_DAY = 40
+WARM_GLOBAL_PER_DAY = 4000
 UNAVAILABLE = (
     "Mizan is not available right now, so there is no result to show. "
     "Please download the CV or email me instead."
@@ -130,18 +134,27 @@ def run_fit(
     try:
         yield sse("stage", {"stage": "rubric", "status": "running"})
         rubric = mizan.rubric(jd_text)
+        criteria = rubric.get("criteria", [])
         yield sse(
             "stage",
             {
                 "stage": "rubric",
                 "status": "done",
                 "job_title": rubric.get("job_title", ""),
-                "criteria": len(rubric.get("criteria", [])),
+                "criteria": len(criteria),
+                # The requirements are shown at once as the skeleton of the report.
+                "requirements": [
+                    {"name": c.get("name", ""), "type": c.get("type", "nice_to_have")}
+                    for c in criteria
+                ],
             },
         )
+        # Announce the next step before doing it: fetching the CV and opening the screening
+        # in Mizan takes a couple of seconds and must not look like a stall.
+        yield sse("stage", {"stage": "screening", "status": "running"})
         cv_text = cv.text()
         screening_id = mizan.create_screening(rubric)
-        yield sse("stage", {"stage": "screening", "status": "running"})
+        yield sse("stage", {"stage": "screening", "status": "done"})
         for event, payload in mizan.screen(screening_id, cv_text, CANDIDATE_REF):
             if event == "progress":
                 # Mizan echoes the numbered CV lines in the parse event;
@@ -172,6 +185,26 @@ def run_fit(
         yield sse("error", {"detail": UNAVAILABLE})
 
 
+@router.get("/fit/warm")
+def warm(
+    request: Request,
+    mizan: Annotated[MizanClient, Depends(get_mizan)],
+    limiter: Annotated[RateLimiter, Depends(get_limiter)],
+) -> dict[str, bool]:
+    """Wake Mizan before the visitor submits (called when the form is first touched).
+
+    Serverless cold starts on both sides add seconds to the first step; one cheap
+    health call removes most of that. Never fails the page: over the (generous) limit
+    or with Mizan down it answers {"warm": false}.
+    """
+    require_origin(request)
+    try:
+        limiter.hit("warm", visitor_key(request), WARM_PER_VISITOR_PER_DAY, WARM_GLOBAL_PER_DAY)
+    except HTTPException:
+        return {"warm": False}
+    return {"warm": mizan.wake()}
+
+
 @router.post("/fit")
 def fit(
     body: FitIn,
@@ -188,5 +221,7 @@ def fit(
     return StreamingResponse(
         iterate_in_threadpool(run_fit(body.jd_text, mizan, cv, cache, s.fit_cache_ttl_s)),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        # no-transform: a proxy that compresses the stream would buffer it and the visitor
+        # would see every step at once at the end (Next.js does this without it).
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
     )

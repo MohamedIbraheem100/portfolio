@@ -201,3 +201,22 @@ Folded into CLAUDE.md once the list is complete.
   intercepted; three of the six product events are wired (run_fit, download_cv, click_email).
 - Finding from the first real runs: the CV never says "Python", so Mizan reports it as "no evidence".
   That is a content gap for the owner to confirm and fix in `resume.yaml`, not a bug.
+
+## D32. Recruiter Mode narrates the wait (2026-11-09)
+- A screening takes 10 to 25 s. The panel lists the whole pipeline from the first second (rubric,
+  opening a screening, then Mizan's parse, extract, judge, verify, score, explain): a spinner on the
+  running step, a check on each finished one, and one line under the running step saying what it
+  really does (LLM or plain code). The status line shimmers with the current step.
+- No clocks, timers or durations anywhere in the panel or the report (owner's call: the wait must not
+  be advertised to a recruiter). After 25 s one line says it is still working. The steps moving are
+  the progress indicator.
+- The rubric's requirements are sent in the `rubric done` event and shown at once as the skeleton of
+  the report ("checking"), so there is real content on screen long before the verdicts.
+- The API announces "opening a screening" before fetching the CV and creating the screening; that
+  gap used to be 3 s of silence.
+- `GET /fit/warm` (origin-checked, capped) is called on the first touch of the form and wakes both
+  serverless functions with one health call.
+- The stream is sent with `Cache-Control: no-cache, no-transform`. Without `no-transform` the Next.js
+  rewrite gzips and buffers it: measured locally, every event arrived together at the end.
+- A Stop button aborts the request in the browser. An answer from the 24 h cache says so and shows
+  no checklist, because nothing was run.
