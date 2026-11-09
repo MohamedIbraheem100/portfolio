@@ -1,5 +1,6 @@
 import { preload } from "react-dom";
 import { ButtonLink } from "@/components/ui/button-link";
+import { TrackLink } from "@/components/ui/track-link";
 import { PortraitCloud } from "@/components/hero/portrait-cloud";
 import { CV_PDF_URL } from "@/lib/cv";
 import type { Resume } from "@/lib/resume";
@@ -11,16 +12,14 @@ import { isTodo } from "@/lib/resume";
   the page is idle, PortraitCloud replaces it with the live point cloud built
   from the same data (W5), when the device and the visitor's settings allow.
 
-  CTAs follow D21 once the features exist: primary becomes "Screen my CV
-  against your role" (W3) and the secondary "Ask my AI twin" (W2). Until then
-  the one amber action is the CV itself.
+  CTAs (D21): the one amber action is Recruiter Mode (/fit, W3). The secondary
+  is the CV until the AI twin ships (W2), when it becomes "Ask my AI twin".
 
   Mobile: text first, then the portrait (the cloud starts a moment later there, below the name).
 */
 export function Hero({ resume }: { resume: Resume }) {
   const { basics } = resume;
   const headline = isTodo(basics.headline) ? null : basics.headline;
-  const email = isTodo(basics.email) ? null : basics.email;
   // The still is the LCP element; ask the browser for it before it parses the markup.
   preload("/portrait-still-1400.webp", {
     as: "image",
@@ -38,14 +37,12 @@ export function Hero({ resume }: { resume: Resume }) {
             <p className="mt-3 font-display text-h3 font-medium text-dim">{basics.role}.</p>
             {headline && <p className="mt-6 max-w-prose text-lead text-phosphor">{headline}</p>}
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <ButtonLink href={CV_PDF_URL} variant="primary">
-                Download CV
+              <ButtonLink href="/fit" variant="primary">
+                Screen my CV against your role
               </ButtonLink>
-              {email && (
-                <ButtonLink href={`mailto:${email}`} variant="text">
-                  Email me
-                </ButtonLink>
-              )}
+              <TrackLink event="download_cv" href={CV_PDF_URL} variant="text">
+                Download CV
+              </TrackLink>
             </div>
           </div>
 
