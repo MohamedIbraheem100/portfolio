@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EXAMPLE_JDS } from "@/components/recruiter/examples";
+import { FitProgress } from "@/components/recruiter/fit-progress";
 import { TrackLink } from "@/components/ui/track-link";
 import { trackEvent } from "@/lib/analytics";
 import { CV_PDF_URL } from "@/lib/cv";
+import { applyEvent, newRun, type FitRun, type RubricPreview } from "@/lib/fit-run";
 import { readSse } from "@/lib/sse";
 
 /*
@@ -13,6 +15,12 @@ import { readSse } from "@/lib/sse";
   with the quoted line, then the honest gaps, then the score as the summary.
   If Mizan is unavailable the panel says so and offers the CV; it never shows a
   made-up score. The JD is processed and not stored (D11).
+
+  The wait is narrated live: the whole pipeline is listed, with a spinner on the
+  running step and a check on each finished one (fit-progress.tsx), and the
+  role's requirements appear as the skeleton of the report as soon as the rubric
+  exists. No clocks or durations anywhere (owner's call). Touching the form warms
+  both serverless functions so the first step starts sooner.
 */
 
 type Requirement = {
@@ -35,32 +43,15 @@ type FitResult = {
   duration_ms: number;
   cached: boolean;
 };
-type Step = { id: string; label: string; status: "running" | "done" };
 type State =
   | { kind: "idle" }
   | { kind: "running" }
   | { kind: "result"; result: FitResult }
   | { kind: "error"; message: string };
 
-const NODE_LABELS: Record<string, string> = {
-  parse: "Reading my CV",
-  redact: "Redacting identifiers (blind mode)",
-  extract: "Extracting my profile",
-  judge: "Judging each requirement",
-  verify: "Checking every quote against the CV",
-  score: "Scoring",
-  explain: "Writing the summary",
-};
 const MIN = 30;
 const MAX = 10_000;
-
-function upsert(steps: Step[], next: Step): Step[] {
-  const i = steps.findIndex((s) => s.id === next.id);
-  if (i === -1) return [...steps, next];
-  const copy = steps.slice();
-  copy[i] = next;
-  return copy;
-}
+const SLOW_AFTER_MS = 25_000;
 
 const VERDICT: Record<string, string> = {
   met: "met",
@@ -75,7 +66,7 @@ function RequirementItem({ r }: { r: Requirement }) {
       <p className="font-display text-lead font-medium text-phosphor">
         {r.name}
         <span className="ml-3 align-middle font-body text-small font-normal text-dim">
-          {r.type === "must_have" ? "must-have" : "nice-to-have"} · {VERDICT[r.verdict] ?? r.verdict}
+          {typeLabel(r.type)} · {VERDICT[r.verdict] ?? r.verdict}
         </span>
       </p>
       {r.evidence.map((e) => (
@@ -88,12 +79,65 @@ function RequirementItem({ r }: { r: Requirement }) {
   );
 }
 
+const typeLabel = (type: string) => (type === "must_have" ? "must-have" : "nice-to-have");
+
+/* Shown while the screening runs: the rubric's requirements, in the place the report will take. */
+function RubricSkeleton({ rubric }: { rubric: RubricPreview }) {
+  return (
+    <div className="md:col-span-12" aria-label="Requirements found in the role">
+      <h2 className="font-display text-h2 font-extrabold text-phosphor">{rubric.jobTitle || "This role"}</h2>
+      <p className="mt-4 max-w-prose text-body text-dim">
+        {rubric.requirements.length} requirements found in the role. Each one is now being checked against
+        my CV.
+      </p>
+      <ul className="mt-6">
+        {rubric.requirements.map((r, i) => (
+          <li key={`${i}-${r.name}`} className="border-t border-phosphor/10 py-4">
+            <p className="font-display text-lead font-medium text-phosphor">
+              {r.name}
+              <span className="ml-3 align-middle font-body text-small font-normal text-dim">
+                {typeLabel(r.type)} · checking
+              </span>
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function RecruiterPanel({ email }: { email: string | null }) {
   const [jd, setJd] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
-  const [steps, setSteps] = useState<Step[]>([]);
+  const [run, setRun] = useState<FitRun | null>(null);
+  const [slow, setSlow] = useState(false);
   const abort = useRef<AbortController | null>(null);
+  const warmed = useRef(false);
+  const statusRef = useRef<HTMLDivElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
+  const running = state.kind === "running";
+
+  // A run that outlasts the usual wait gets one reassuring line, not a clock.
+  useEffect(() => {
+    if (!running) return;
+    const id = window.setTimeout(() => setSlow(true), SLOW_AFTER_MS);
+    return () => window.clearTimeout(id);
+  }, [running]);
+
+  useEffect(() => () => abort.current?.abort(), []);
+
+  // First touch of the form: wake the API and Mizan (cold serverless functions cost seconds).
+  function warm() {
+    if (warmed.current) return;
+    warmed.current = true;
+    fetch("/api/fit/warm", { cache: "no-store" }).catch(() => {});
+  }
+
+  function stop() {
+    abort.current?.abort();
+    setRun(null);
+    setState({ kind: "idle" });
+  }
 
   const length = jd.trim().length;
   const valid = length >= MIN && length <= MAX;
@@ -105,8 +149,11 @@ export function RecruiterPanel({ email }: { email: string | null }) {
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;
-    setSteps([]);
+    setSlow(false);
+    setRun(newRun());
     setState({ kind: "running" });
+    // On a phone the status sits below the form: bring it into view.
+    requestAnimationFrame(() => statusRef.current?.scrollIntoView({ block: "nearest" }));
     let finished = false;
     try {
       const session = await fetch("/api/session", { cache: "no-store", signal: controller.signal });
@@ -128,28 +175,9 @@ export function RecruiterPanel({ email }: { email: string | null }) {
         res,
         ({ event, data }) => {
           const p = JSON.parse(data) as Record<string, unknown>;
-          if (event === "stage" && p.stage === "rubric") {
-            const done = p.status === "done";
-            setSteps((s) =>
-              upsert(s, {
-                id: "rubric",
-                status: done ? "done" : "running",
-                label: done
-                  ? `Rubric: ${p.criteria} requirements for ${p.job_title || "this role"}`
-                  : "Reading the role and building a rubric",
-              }),
-            );
-          } else if (event === "progress" && typeof p.node === "string" && p.status !== "skipped") {
-            setSteps((s) =>
-              upsert(s, {
-                id: p.node as string,
-                status: p.status === "running" ? "running" : "done",
-                label: NODE_LABELS[p.node as string] ?? (p.node as string),
-              }),
-            );
-          } else if (event === "result") {
+          setRun((r) => r && applyEvent(r, event, p));
+          if (event === "result") {
             finished = true;
-            setSteps((s) => s.map((x) => ({ ...x, status: "done" })));
             setState({ kind: "result", result: p as unknown as FitResult });
             requestAnimationFrame(() => reportRef.current?.focus());
           } else if (event === "error") {
@@ -168,7 +196,8 @@ export function RecruiterPanel({ email }: { email: string | null }) {
     }
   }
 
-  const running = state.kind === "running";
+  const cached = state.kind === "result" && state.result.cached;
+  const showProgress = run !== null && (running || (state.kind === "result" && !cached));
 
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-8">
@@ -181,6 +210,7 @@ export function RecruiterPanel({ email }: { email: string | null }) {
           name="jd"
           value={jd}
           onChange={(e) => setJd(e.target.value)}
+          onFocus={warm}
           rows={12}
           maxLength={MAX}
           placeholder="Paste the role's requirements here, in English or Arabic."
@@ -192,7 +222,10 @@ export function RecruiterPanel({ email }: { email: string | null }) {
             <button
               key={ex.label}
               type="button"
-              onClick={() => setJd(ex.text)}
+              onClick={() => {
+                warm();
+                setJd(ex.text);
+              }}
               className="underline decoration-dim/50 underline-offset-4 hover:text-amber hover:decoration-amber"
             >
               {ex.label}
@@ -207,6 +240,15 @@ export function RecruiterPanel({ email }: { email: string | null }) {
           >
             {running ? "Screening" : "Screen my CV"}
           </button>
+          {running && (
+            <button
+              type="button"
+              onClick={stop}
+              className="text-body text-dim underline decoration-dim/50 underline-offset-4 hover:text-amber hover:decoration-amber"
+            >
+              Stop
+            </button>
+          )}
           <p className="text-small text-dim" aria-live="polite">
             {length > 0 && length < MIN && `${MIN - length} more characters needed.`}
           </p>
@@ -217,27 +259,23 @@ export function RecruiterPanel({ email }: { email: string | null }) {
         </p>
       </form>
 
-      <div className="md:col-span-5">
-        {steps.length > 0 && (
-          <ol aria-label="Progress" className="space-y-2 font-mono text-small">
-            {steps.map((s) => (
-              <li key={s.id} className={s.status === "running" ? "text-amber" : "text-dim"}>
-                <span aria-hidden="true" className="mr-2 inline-block w-3">
-                  {s.status === "running" ? ">" : "·"}
-                </span>
-                {s.label}
-              </li>
-            ))}
-          </ol>
+      <div ref={statusRef} className="md:col-span-5">
+        {showProgress && <FitProgress run={run} slow={slow} />}
+        {cached && (
+          <p role="status" className="max-w-prose text-body text-dim">
+            Answered from the 24-hour cache: this exact text was screened earlier, so nothing was run
+            again.
+          </p>
         )}
-        {state.kind === "idle" && steps.length === 0 && (
+        {state.kind === "idle" && (
           <p className="max-w-prose text-body text-dim">
             Mizan turns the role into a weighted rubric, reads my CV against it, and only keeps a claim if the
-            quoted line really is in the CV. You see what is met, what is missing, and then the score.
+            quoted line really is in the CV. You see what is met, what is missing, and then the score, and
+            you can watch every step as it runs.
           </p>
         )}
         {state.kind === "error" && (
-          <div role="alert" className="mt-6 border-l-2 border-amber pl-4">
+          <div role="alert" className="border-l-2 border-amber pl-4">
             <p className="max-w-prose text-body text-phosphor">{state.message}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
               <TrackLink event="download_cv" href={CV_PDF_URL} variant="quiet">
@@ -252,6 +290,8 @@ export function RecruiterPanel({ email }: { email: string | null }) {
           </div>
         )}
       </div>
+
+      {running && run?.rubric && run.rubric.requirements.length > 0 && <RubricSkeleton rubric={run.rubric} />}
 
       {state.kind === "result" && (
         <div ref={reportRef} tabIndex={-1} className="md:col-span-12" aria-label="Fit report">
@@ -299,8 +339,8 @@ export function RecruiterPanel({ email }: { email: string | null }) {
             </p>
             <p className="mt-2 font-mono text-small text-dim">
               must-haves {state.result.must_haves_met ? "met" : "not all met"} · quotes verified{" "}
-              {state.result.quotes_verified} of {state.result.quotes_checked} ·{" "}
-              {(state.result.duration_ms / 1000).toFixed(1)} s{state.result.cached ? " · cached" : ""}
+              {state.result.quotes_verified} of {state.result.quotes_checked}
+              {state.result.cached ? " · cached" : ""}
             </p>
             {state.result.summary && (
               <p className="mt-5 max-w-prose text-body text-phosphor">{state.result.summary}</p>

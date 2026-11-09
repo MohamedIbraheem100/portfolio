@@ -181,10 +181,43 @@ html.hero-live .hero-still {
 
 :focus-visible { transition: outline-color 120ms; }
 
+/* Recruiter Mode live status (components/recruiter/fit-progress.tsx). Both answer the
+   visitor's own request: the step being worked on shimmers, an amber ring turns beside it. */
+@keyframes status-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+.status-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-dim) 0%,
+    var(--color-dim) 38%,
+    var(--color-phosphor) 50%,
+    var(--color-dim) 62%,
+    var(--color-dim) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: status-shimmer 1.9s linear infinite;
+}
+@keyframes fit-spin {
+  to { transform: rotate(360deg); }
+}
+.fit-spinner {
+  border: 2px solid rgba(255, 176, 31, 0.25);
+  border-top-color: var(--color-amber);
+  border-radius: 9999px;
+  animation: fit-spin 0.8s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .detect-corner, .detect-label { animation: none; }
   .process-pulse { display: none; }
   .btn-sheen:hover::after { animation: none; }
+  .status-shimmer { animation: none; background-image: none; color: var(--color-phosphor); }
+  .fit-spinner { animation: none; }
 }
 
 /* Lenis (components/motion/smooth-scroll.tsx). Only active when Lenis adds these classes. */
