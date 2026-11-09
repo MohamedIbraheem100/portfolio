@@ -87,7 +87,9 @@ class MizanClient:
         try:
             resp = httpx.post(
                 f"{self.base_url}/screenings",
-                json={"rubric": rubric, "blind": True},
+                # Blind mode off: this is the owner's own public CV, and redaction would put
+                # "[REDACTED]" inside the quoted evidence the visitor reads.
+                json={"rubric": rubric, "blind": False},
                 timeout=self.timeout,
             )
         except httpx.HTTPError as exc:
