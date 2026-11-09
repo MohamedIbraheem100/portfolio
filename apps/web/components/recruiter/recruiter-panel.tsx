@@ -44,7 +44,6 @@ type State =
 
 const NODE_LABELS: Record<string, string> = {
   parse: "Reading my CV",
-  redact: "Redacting identifiers (blind mode)",
   extract: "Extracting my profile",
   judge: "Judging each requirement",
   verify: "Checking every quote against the CV",
@@ -139,7 +138,12 @@ export function RecruiterPanel({ email }: { email: string | null }) {
                   : "Reading the role and building a rubric",
               }),
             );
-          } else if (event === "progress" && typeof p.node === "string" && p.status !== "skipped") {
+          } else if (
+            event === "progress" &&
+            typeof p.node === "string" &&
+            p.node !== "redact" && // blind mode is off for the owner's public CV
+            p.status !== "skipped"
+          ) {
             setSteps((s) =>
               upsert(s, {
                 id: p.node as string,

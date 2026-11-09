@@ -186,3 +186,18 @@ Folded into CLAUDE.md once the list is complete.
 - Domain: is-a-dev/register#60489 merged 2026-11-09. DNS (A + TXT) is live; Vercel still has to verify the
   domain and issue the certificate (owner: Settings > Domains > Refresh). `ALLOWED_ORIGINS` on the API
   must include `https://mohamedibrahim.is-a.dev` or the contact form is refused from the new domain.
+
+## D31. Recruiter Mode as shipped (W3, 2026-11-09)
+- `/fit` is a page, not a modal: deep-linkable, static, and the hero's one amber action leads to it.
+- The CV sent to Mizan is `/cv.txt`, plain text rendered from `resume.yaml` (one fact per line), not
+  the PDF: quotes are exact lines a visitor can read, and there is no PDF text-layer risk.
+- Blind mode is off for these screenings: it is the owner's own public CV, and redaction put
+  "[REDACTED]" inside the quoted evidence.
+- The two example job descriptions are deliberately not tuned to the CV; each asks for things it lacks.
+- Mizan change: `X-Internal-Key` on `/screen` (mizan-hr#12) counts portfolio traffic on its own daily
+  cap. `MIZAN_INTERNAL_KEY` here must equal `INTERNAL_KEY` there.
+- Measured on production: 8 s for a fresh job description, about 1 s from the 24 h cache.
+- CI gained Playwright smoke tests (`apps/web/e2e`), run against the production build with `/api/*`
+  intercepted; three of the six product events are wired (run_fit, download_cv, click_email).
+- Finding from the first real runs: the CV never says "Python", so Mizan reports it as "no evidence".
+  That is a content gap for the owner to confirm and fix in `resume.yaml`, not a bug.
