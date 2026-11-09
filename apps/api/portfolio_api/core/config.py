@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     # Recruiter Mode -> Mizan (W3)
     mizan_api_url: str = "https://mizan-hr-api.vercel.app"
     mizan_internal_key: str = ""
+    # Plain-text CV rendered by the web app from resume.yaml (single source of truth).
+    cv_text_url: str = "https://mohamedibrahim-ai.vercel.app/cv.txt"
+    fit_cache_ttl_s: int = 86400
 
     # Contact form (W1/W2)
     resend_api_key: str = ""
