@@ -175,3 +175,14 @@ Folded into CLAUDE.md once the list is complete.
 - Mobile order is now name, role, headline, CTAs, then the portrait (the cloud appears a moment
   later, below the fold of the first read).
 - The cursor-drift effect (points pulled toward the cursor) was removed: it deformed the face.
+
+## D30. Motion system and order of work (2026-11-09)
+- W5b shipped: the neural field is a fixed page-wide layer; project visuals get detector brackets on
+  scroll; the Experience rule fills with scroll; How I build carries a signal; buttons and nav have
+  micro-interactions. CLAUDE.md "Motion rules" was rewritten to match (two languages: detector, data pulse).
+- Order from here: W3 Recruiter Mode first (no content gate, Mizan is live), then W2 AI Twin (gated on the
+  owner's interview answers), then W4. Visual work is frozen until content catches up, except what a new
+  feature needs (chat panel, fit panel, lab UI).
+- Domain: is-a-dev/register#60489 merged 2026-11-09. DNS (A + TXT) is live; Vercel still has to verify the
+  domain and issue the certificate (owner: Settings > Domains > Refresh). `ALLOWED_ORIGINS` on the API
+  must include `https://mohamedibrahim.is-a.dev` or the contact form is refused from the new domain.

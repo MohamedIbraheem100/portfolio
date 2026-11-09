@@ -3,8 +3,9 @@
 ## What this is
 Personal portfolio of **Mohamed Ibrahim, AI Engineer** (agentic systems + applied computer vision).
 Spelling is **Mohamed Ibrahim** everywhere (site, CV, JSON-LD, domain). Domain: `mohamedibrahim.is-a.dev`
-(PR to is-a-dev/register opens the day of the first deploy; site lives on `.vercel.app` until approved).
-Every settled decision and its reason lives in `docs/decisions.md` (D1-D26). Read it before proposing a change.
+(registered 2026-11-09 via is-a-dev/register#60489; also live at `mohamedibrahim-ai.vercel.app`).
+Every settled decision and its reason lives in `docs/decisions.md` (D1-D29). Read it before proposing a change.
+Status: W0, W1 and W5 are shipped. Next: W3 Recruiter Mode, then W2 AI Twin (needs the owner's interview).
 Audience: recruiters and hiring managers. Goal: in 10 seconds they know who he is; in 1 minute they
 have *used* something he built.
 
@@ -24,7 +25,7 @@ from his own work: point clouds, depth maps, the Inferno colormap, bounding boxe
 | Area | Choice |
 |---|---|
 | Web | Next.js (App Router) + TypeScript + Tailwind, deployed on Vercel |
-| 3D | three.js via @react-three/fiber + drei; custom GLSL for the point cloud |
+| 3D | three.js via @react-three/fiber (no drei); custom GLSL for the point cloud; loaded only in a lazy chunk |
 | Motion | GSAP + ScrollTrigger (scroll/timelines), Lenis (smooth scroll), Motion (UI micro-interactions). Lenis: off under reduced-motion, native scroll on touch, lerp ~0.1, anchors and find-in-page keep working. GSAP/Lenis load after first paint |
 | In-browser ML | onnxruntime-web (WebGPU → WASM fallback) inside a Web Worker |
 | Content | `apps/web/content/resume.yaml` (single source of truth) + MDX case studies |
@@ -35,7 +36,7 @@ from his own work: point clouds, depth maps, the Inferno colormap, bounding boxe
 | Analytics | Vercel Web Analytics |
 | CI | GitHub Actions: lint, typecheck, pytest (LLM tests on a mocked provider), Playwright smoke, Lighthouse CI, CV PDF build (uploaded as a rolling GitHub Release asset `cv-latest`, never committed). Live LLM eval = manual `workflow_dispatch` before each milestone |
 | Toolchain | Mirrors Mizan: npm + Node 22 + Next 16 + React 19 + Tailwind 4; Python 3.12 + pip requirements + ruff + pytest. Two Vercel projects (web, api); Next.js rewrites `/api/*` to the API project (fallback: direct CORS calls like Mizan) |
-| Media | Videos, `portrait.bin`, ONNX models hosted on Hugging Face (free repos), fetched by URL. Nothing heavy in git |
+| Media | Videos and ONNX models hosted on Hugging Face (free repos), fetched by URL. The portrait ships from `public/` as compact PCP3 point files (D27: 234 KB / 117 KB) plus a WebP still. Nothing heavier in git |
 
 Keep the Python bundle light (no torch, no local models server-side).
 
@@ -44,18 +45,19 @@ Keep the Python bundle light (no torch, no local models server-side).
 portfolio/
 ├── apps/web/
 │   ├── app/            # / , /work/[slug] , /lab , /cv , not-found
-│   ├── components/     # hero/ work/ chat/ recruiter/ lab/ ui/
-│   ├── three/          # PointCloudPortrait + shaders/
+│   ├── components/     # hero/ work/ experience/ process/ contact/ motion/ seo/ ui/ (chat/ recruiter/ lab/ to come)
+│   ├── three/          # PointCloudPortrait.tsx (shaders inline)
+│   ├── lib/            # resume.ts (zod schema + loader), pcp3.ts (point format), site.ts, cv.ts
 │   ├── ml/             # onnx worker, YOLO pre/post-processing, NMS
 │   ├── content/        # resume.yaml, work/*.mdx
-│   └── public/         # portrait.bin, posters, videos (compressed)
+│   └── public/         # portrait-40k.pcp3, portrait-20k.pcp3, portrait-still-*.webp, work/*.webp
 ├── apps/api/
 │   ├── api/index.py    # Vercel ASGI entry (same as Mizan); vercel.json maxDuration 300
-│   ├── portfolio_api/  # routes/{chat,fit,contact,health}.py, llm/, core/
+│   ├── portfolio_api/  # routes/{health,session,contact}.py (chat, fit to come), core/{config,security,ratelimit}.py, services/email.py
 │   ├── knowledge/      # bio.md experience.md projects.md opinions.md working-style.md voice.md faq.md boundaries.md
 │   └── tests/          # incl. prompt-injection tests for chat and fit
-├── tools/              # portrait_to_points.py, export_onnx.py, compress_video.sh
-├── docs/               # decisions.md (D1-D26), content-checklist.md
+├── tools/              # portrait_to_points.py, pack_points.py, render_still.py, inline_font.py, prototype/
+├── docs/               # decisions.md (D1-D29), content-checklist.md, brief.md
 └── .github/workflows/  # ci.yml, lighthouse.yml, cv-pdf.yml
 ```
 
@@ -78,20 +80,28 @@ Type (all OFL, self-hosted via next/font/local, subsetted; total first-load font
 - Scale: 14 / 17 / 21 / 28 / 44 / 72 / 120px (120 only for the hero name; fluid `clamp()` down to 44 on mobile).
 
 Layout: left-aligned, asymmetric 12-col grid (hero: 5 cols text / 7 cols 3D). Projects are full-width
-scenes where the demo or video *is* the visual; not card grids. Designed **mobile-first**: the mobile hero
-is judged first. A **CV** button sits in the header on every page. No "Proof" stat row: every verified
+scenes where the demo or video *is* the visual; not card grids. Designed **mobile-first**; on phones the
+hero reads name, role, headline, CTAs, then the portrait (D29). A **CV** button sits in the header on every page. No "Proof" stat row: every verified
 number lives as a sentence inside its project scene, and the hero sentence carries the two strongest.
 
 ## Motion rules
-1. One orchestrated moment on load: 40–60k scattered points assemble into the depth portrait (~1.6s),
-   then an amber bounding box locks onto it with a confidence value. Prototyped standalone on W1 day 1 with
-   the real photo (three densities); if the inferno face does not convince, art direction changes first.
-2. Cursor parallax on the point cloud, max ~8°.
-3. Everything else moves only in response to the visitor (open, run, ask, drag).
-4. No fade-up-on-scroll on every section. No hover-lift on every card.
-5. `prefers-reduced-motion`: static point cloud, no smooth scroll, no parallax.
-6. Low-end / no WebGL: pre-rendered still of the point cloud.
-7. Stretch (W8 only): points morph per project while scrolling (banknote → video frame → scale).
+Every motion speaks one of two languages: the **detector** (amber: boxes, brackets, sweeps, rules) or the
+**data pulse** (phosphor/amber signals along threads). Nothing moves for decoration alone.
+1. The one orchestrated moment on load: the portrait condenses out of a dust field in ~1.6 s (40k points on
+   desktop, 20k on touch), then one amber sweep and the box locks onto the head with **measured** telemetry
+   only (point count, assemble time, fps). No invented confidence value.
+2. Cursor parallax on the point cloud, max ~8°, desktop only. No per-point cursor drift (it deformed the face).
+3. Site background (D28): one fixed neural field behind the whole page: faint phosphor threads, slow drift,
+   rare pulses, nodes near the cursor wake amber. Thins below the hero for reading comfort.
+4. Scroll is a detector, not a fade-up: project visuals get amber brackets and a factual label once when they
+   enter view; the Experience rule fills with scroll (GSAP ScrollTrigger). No fade-up-on-scroll per section,
+   no hover-lift on cards.
+5. Micro-interactions answer the visitor only: button press and one sheen pass, nav underline draw, focus ring.
+6. `prefers-reduced-motion`: static still instead of the cloud, static field frame, no smooth scroll, no
+   parallax, no sweep. No WebGL: the still.
+7. Live devices never see the still first (inline head script, D29). Touch starts the cloud on the first
+   scroll or touch so the three.js work stays out of the mobile load metrics.
+8. Stretch (W8 only): points morph per project while scrolling (banknote → video frame → scale).
 
 ## Anti-AI-look rules (hard)
 - No emoji anywhere: UI, copy, commit messages shown in UI, or AI Twin replies.
@@ -104,13 +114,15 @@ number lives as a sentence inside its project scene, and the hero sentence carri
 
 ## Features
 ### Hero
-Point cloud portrait from `portrait.bin` (generated by `tools/portrait_to_points.py` from his photo + Depth
-Anything V2 depth map; PCP2: float32 x,y,z + uint8 r,g,b + equalized-depth byte; jittered-grid sampling).
+Point cloud portrait from `public/portrait-{40k,20k}.pcp3` (pipeline: `tools/portrait_to_points.py` from his
+photo + Depth Anything V2 → PCP2, then `tools/pack_points.py` → PCP3, 6 bytes per point; jittered-grid sampling).
+`tools/render_still.py` renders the WebP still from the same data (fallback and reduced-motion view).
 Art direction (D26): **mono**, points in `phosphor` on `night`, brightness = photo luminance x nearness,
 point size follows luminance (halftone). The amber box is the only accent. Full inferno on the face was
 tried and rejected (thermal-camera look); the ramp stays for real model outputs only.
-Copy: name, "AI Engineer.", one sentence on what he builds. Primary CTA (amber): "Screen my CV against your role".
-Secondary (underlined text): "Ask my AI twin". One amber action per view.
+Copy: name, "AI Engineer.", one sentence on what he builds. Primary CTA (amber): "Screen my CV against your role"
+(from W3; until then "Download CV"). Secondary (underlined text): "Ask my AI twin" (from W2; until then "Email me").
+One amber action per view.
 
 ### Ask Mohamed (AI Twin) — `POST /chat` (SSE)
 - Long-context, not RAG: system rules + all `knowledge/*.md` (~15–30k tokens) + `voice.md` examples + last 6 turns.
@@ -167,10 +179,11 @@ UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, MIZAN_API_URL, MIZAN_INTERNAL_
 CONTACT_TO_EMAIL, SESSION_TOKEN_SECRET (HMAC for the page session token). Keep `.env.example` in sync.
 
 ## Milestones
-- W0 Foundation: repo on `main`, tokens, fonts + type specimen page, layout shell, resume.yaml schema,
-  CI green, two Vercel projects deployed, is-a.dev PR opened, SEO basics.
-- W1 Content-first site: day 1 = standalone point cloud prototype with the real photo; then all sections
-  with real content (mobile-first), static hero image, /cv + PDF release.
-- W2 AI Twin. W3 Recruiter Mode (incl. `X-Internal-Key` in Mizan). W4 Vision Lab + Cashy. W5 Point cloud hero.
+- W0 Foundation (**shipped**): repo on `main`, tokens, fonts + type specimen page, layout shell, resume.yaml
+  schema, CI green, two Vercel projects deployed, SEO basics.
+- W1 Content-first site (**shipped**): point cloud prototype, all sections with real content, contact form
+  (D10 protection), /cv + PDF release, Lenis, is-a.dev domain registered.
+- W5 Point cloud hero + motion system: **shipped** (2026-11-08/09), ahead of W2 to W4 by the owner's choice.
+- W3 Recruiter Mode (incl. `X-Internal-Key` in Mizan), then W2 AI Twin (needs the interview), then W4 Vision Lab + Cashy.
 - W6 Media + case studies + OG images. W7 Polish + accessibility. W8 (stretch) scroll morph.
 Each milestone: deployed, CI green, and the owner can explain what was built.
