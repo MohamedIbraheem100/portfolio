@@ -264,3 +264,26 @@ Folded into CLAUDE.md once the list is complete.
   `resume.yaml`.
 - `resume.yaml` gained the same facts (availability, team sizes, his part, what failed in Mizan,
   the booking path that calls the CRM); the CV still prints to two pages.
+
+## D35. The AI twin's API: model ladder, checked answers (W2, 2026-11-14)
+- Measured with the owner's keys: each Groq model allows 8,000 tokens a minute and 1,000 requests a
+  day, and the knowledge base costs about 4,900 tokens per message, so Groq alone gives about three
+  messages a minute. A Gemini key from a new Google project works on the free tier:
+  `gemini-3.5-flash-lite` answers in 1 to 2 s with the whole knowledge base and took six messages in
+  a row without a refusal. `gemini-3.5-flash` thinks for 8 to 18 s and is not used.
+- So the design stays long context (CLAUDE.md), with a ladder: Gemini Flash-Lite, then Groq Qwen
+  (best Egyptian Arabic), gpt-oss-120b, gpt-oss-20b. A model that answers 429 or breaks is skipped
+  for its retry-after. A paid OpenAI model can be appended as the last step by setting its key; no
+  code change. The compact-prompt idea proposed earlier the same day was dropped once Gemini worked.
+- When every model is out, the visitor gets a plain "busy" reply with the CV and the email: never an
+  error, never a hang.
+- Answers are not streamed token by token. The whole answer is produced (about a second), cleaned
+  and checked in code, and only then sent: any number, email or link that is not in the knowledge
+  base, a phone number, or a piece of the prompt replaces the answer with "I'd rather Mohamed
+  answer that himself". The model is instructed to stay grounded; this check does not rely on it.
+- The visitor's text travels only in the user role. History comes from the browser, so it is
+  trimmed to six turns and to user/assistant roles.
+- Nothing is stored or logged: not the question, not the answer.
+- `evals/twin_eval.py` runs 20 questions (facts, hand-overs, false premises, injections, Arabic and
+  English) through the same code path against the real models. First run: 20 of 20, 1.1 s average.
+  It costs quota, so it is run by hand before a release, not in CI.
