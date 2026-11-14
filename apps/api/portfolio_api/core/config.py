@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     upstash_redis_rest_token: str = ""
     chat_limit_per_visitor_per_day: int = 30
     chat_global_per_day: int = 1500
+    chat_burst_per_minute: int = 8  # one visitor cannot drain a model's per-minute quota
+    chat_cache_ttl_s: int = 86400  # first questions (no history) are answered once a day
     fit_limit_per_visitor_per_day: int = 5
     fit_global_per_day: int = 100
     contact_limit_per_visitor_per_day: int = 5

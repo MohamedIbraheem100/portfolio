@@ -60,6 +60,8 @@ test("home shows the name, the sections and the Recruiter Mode action", async ({
   const cta = page.getByRole("link", { name: "Screen my CV against your role" });
   await expect(cta).toHaveAttribute("href", "/fit");
   await expect(page.getByRole("link", { name: "CV", exact: true })).toHaveAttribute("href", "/cv");
+  await expect(page.getByRole("button", { name: "Ask my AI twin" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Chat with my AI twin" })).toBeVisible();
 });
 
 test("the CV page and the plain-text CV render from resume.yaml", async ({ page, request }) => {
@@ -205,4 +207,57 @@ test("Recruiter Mode: when Mizan is unavailable there is a message and no score"
   await expect(page.getByLabel("Fit report")).toHaveCount(0);
   await expect(page.getByRole("list", { name: "Progress" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Download CV" }).first()).toBeVisible();
+});
+
+test("AI twin: the chat opens from the hero, answers, and follows the visitor to another page", async ({ page }) => {
+  await mockApi(page);
+  let asked = 0;
+  await page.route("**/api/chat", (route) => {
+    asked += 1;
+    return route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: sse([
+        ["status", { state: "thinking" }],
+        ["answer", { text: "I am open to a new role now. My notice period is 14 days.", lang: "en", source: "model" }],
+        ["done", {}],
+      ]),
+    });
+  });
+
+  await page.goto("/");
+  await expect(page.getByRole("dialog")).toHaveCount(0); // the panel is not on the page until asked for
+  await page.getByRole("button", { name: "Ask my AI twin" }).click();
+  const chat = page.getByRole("dialog", { name: "Chat with Mohamed's AI twin" });
+  await expect(chat.getByText("An AI trained on Mohamed’s work.")).toBeVisible();
+
+  await chat.getByRole("button", { name: "Are you available, and which roles are you looking for?" }).click();
+  const conversation = chat.getByRole("list", { name: "Conversation" });
+  await expect(conversation.getByText("My notice period is 14 days.")).toBeVisible();
+  expect(asked).toBe(1);
+
+  // the page behind stays usable, and the conversation survives a move to another page
+  await page.getByRole("link", { name: "CV", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Mohamed Ibrahim" })).toBeVisible();
+  await expect(conversation.getByRole("listitem")).toHaveCount(2);
+
+  // closed and reopened from the floating button, nothing is lost
+  await chat.getByRole("button", { name: "Close chat" }).click();
+  await expect(chat).toHaveCount(0);
+  await page.getByRole("button", { name: "Chat with my AI twin" }).click();
+  await expect(conversation.getByRole("listitem")).toHaveCount(2);
+});
+
+test("AI twin: a refused request shows the reason and keeps the chat usable", async ({ page }) => {
+  await mockApi(page);
+  await page.route("**/api/chat", (route) =>
+    route.fulfill({ status: 429, json: { detail: "You have reached today's limit for this feature. Please email me instead." } }),
+  );
+  await page.goto("/fit");
+  await page.getByRole("button", { name: "Chat with my AI twin" }).click();
+  const chat = page.getByRole("dialog", { name: "Chat with Mohamed's AI twin" });
+  await chat.getByLabel("Your question").fill("Are you available?");
+  await chat.getByRole("button", { name: "Send" }).click();
+  await expect(chat.getByRole("alert")).toContainText("today's limit");
+  await expect(chat.getByLabel("Your question")).toBeEnabled();
 });

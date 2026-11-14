@@ -287,3 +287,55 @@ Folded into CLAUDE.md once the list is complete.
 - `evals/twin_eval.py` runs 20 questions (facts, hand-overs, false premises, injections, Arabic and
   English) through the same code path against the real models. First run: 20 of 20, 1.1 s average.
   It costs quota, so it is run by hand before a release, not in CI.
+
+## D36. The AI twin is a floating chat, with its quota protected (W2, 2026-11-14)
+- Owner's call: not a page. A chat that follows the visitor across pages and scroll, like a
+  messenger, so they can ask something and check it against the page (Experience, the CV). It sits
+  in the root layout; the conversation is kept in `sessionStorage`, so it survives page changes and
+  a reload and is gone when the tab closes. Nothing is stored on the server.
+- Desktop: a panel in the lower right corner, the page stays usable. Phone: a sheet over the lower
+  72% of the screen; the page above it still scrolls.
+- Only a small launcher ships with every page ("Chat with my AI twin"); the panel's code is fetched
+  on first open. The hero's secondary action is now "Ask my AI twin" (D21) and opens the same chat;
+  "Download CV" left the hero (the CV button is in the header on every page).
+- Four starter questions chosen with the owner so that one click says who he is: a 30-second
+  introduction, what runs in production, the project he is proudest of and his part, availability
+  and roles.
+- Waiting shows a turning amber ring and a shimmering "Thinking", no clock (D32).
+- Quota and abuse, on top of D10 (Origin, session token, 30 messages a visitor a day, global cap):
+  - a first question (no history) is answered from a 24 h cache keyed by the hash of the question
+    and the prompt, so starter and repeated questions cost no model call, and a change to the
+    knowledge base empties the cache by itself;
+  - at most 8 messages a minute per visitor;
+  - follow-ups and replaced answers are never cached.
+- The number check accepts a month written as a number only inside a date ("4/2026", "شهر 4") and
+  only for a month the knowledge base names. Found by the live eval: a correct Arabic answer was
+  being replaced because it wrote April as 4. "7 years of experience" is still rejected.
+- Fixed in passing: the hero's glow overflowed the page sideways near 1024 px; `main` now clips it.
+- Live eval after these changes: 20 of 20, 1.3 s average, no answer replaced.
+
+## D37. The chat's look, and two ways of saying no (W2, 2026-11-14)
+- The owner tried D36 on localhost and found it plain next to the hero. Decisions taken with him:
+  - No second use of his portrait: it appears once, in the hero. The twin's mark is a small sphere
+    of points turning in 3D (canvas 2D, about 90 points), inside the detector's amber brackets. It
+    turns faster and warms to amber while the twin is thinking, so it is also the waiting indicator.
+  - Launcher: stays in the lower right corner (where people look for a chat; higher up it would
+    cover the text), now a larger pill with the sphere, a light that travels around its edge, a
+    glow and lift on hover. Once per visit a short line rises above it, on phones too
+    ("Ask me anything"; longer on wide screens).
+  - A new status colour, `online` (#3DDC84), used only for the "online" dot. Amber stays the only
+    action colour.
+  - Hero: "Ask my AI twin" is a real outlined button, the same height as the amber one, with the
+    green dot.
+  - Panel: soft corners (the chat is the one place that leaves the 2 px box radius), message
+    bubbles that rise in, the answer written out word by word, three pulsing dots while waiting,
+    an input that grows with the text and an arrow button that turns amber when there is something
+    to send, an opening animation. No blur or glass (CLAUDE.md).
+  - Two suggested follow-up questions after each answer.
+  - Not built now, by his choice: "see it on the page" links under answers.
+- The twin now says no in two different ways. A question about Mohamed that it cannot answer
+  (salary, visa) still gets the hand-over sentence and the email. Anything unrelated (shopping,
+  politics, jokes, coding tasks) or rude gets one warm sentence that it is Mohamed's AI twin and
+  only talks about his work, plus two things it can answer, with no email. Before this, "do you
+  have shampoo?" was answered with "I'd rather Mohamed answer that himself".
+- Live eval grew to 24 questions (shampoo, an insult, politics, a joke): 24 of 24.

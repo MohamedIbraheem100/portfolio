@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from portfolio_api.core import ratelimit
+from portfolio_api.core.cache import MemoryCache, get_cache
 from portfolio_api.core.security import issue_token
 from portfolio_api.main import app
 from portfolio_api.services import twin
@@ -44,7 +45,9 @@ class FakeLLM:
 def llm():
     ratelimit.get_limiter.cache_clear()
     fake = FakeLLM()
+    memory = MemoryCache()
     app.dependency_overrides[get_llm] = lambda: fake
+    app.dependency_overrides[get_cache] = lambda: memory
     yield fake
     app.dependency_overrides.clear()
     ratelimit.get_limiter.cache_clear()
@@ -189,6 +192,8 @@ def test_groq_reasoning_models_get_a_short_reasoning_budget():
         "Mizan is live at mizan-hr.vercel.app.",
         f"You can reach me at {twin.OWNER_EMAIL}.",
         "I studied from 2020 to 2024.",
+        "I was there from 4/2026 to 07/2026.",  # April and July, written as numbers
+        "اشتغلت هناك من شهر 4 لشهر 7 سنة 2026.",
     ],
 )
 def test_answers_that_stay_inside_the_knowledge_base_pass(text):
@@ -199,6 +204,8 @@ def test_answers_that_stay_inside_the_knowledge_base_pass(text):
     ("text", "reason"),
     [
         ("I have 5 years of experience.", "number"),
+        ("I joined in 6/2026.", "number"),  # June is not a month the knowledge base names
+        ("I have 7 years of experience.", "number"),  # 7 is July only inside a date
         ("Accuracy was 99.2% in production.", "number"),
         ("I expect 3000 dollars a month.", "number"),
         ("Write to me at someone@else.com.", "foreign email"),
@@ -310,10 +317,36 @@ def test_the_per_visitor_daily_limit_is_enforced(llm, monkeypatch):
     from portfolio_api.core.config import get_settings
 
     monkeypatch.setattr(get_settings(), "chat_limit_per_visitor_per_day", 2)
-    assert [post().status_code for _ in range(3)] == [200, 200, 429]
+    assert [post(f"q {i}").status_code for i in range(3)] == [200, 200, 429]
     assert len(llm.calls) == 2
 
 
 def test_status_reports_the_bundle_without_secrets(llm):
     llm.specs = [1, 2]
     assert client.get("/chat/status").json() == {"knowledge_files": 8, "models": 2}
+
+
+# ---------------------------------------------------------------- quota protection
+def test_a_repeated_first_question_is_answered_from_the_cache(llm):
+    first = answer_of(post("Are you available?"))
+    again = answer_of(post("  are you AVAILABLE ?? "))
+    assert first == again and len(llm.calls) == 1
+
+
+def test_follow_ups_and_replaced_answers_are_never_cached(llm):
+    history = [{"role": "user", "text": "hi"}, {"role": "assistant", "text": "hello"}]
+    post("Are you available?", history=history)
+    post("Are you available?", history=history)
+    assert len(llm.calls) == 2
+    llm.text = "I have 7 years of experience."
+    post("Years?")
+    post("Years?")
+    assert len(llm.calls) == 4  # a fallback is not stored: the next ask tries the model again
+
+
+def test_a_burst_of_messages_from_one_visitor_is_stopped(llm, monkeypatch):
+    from portfolio_api.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "chat_burst_per_minute", 3)
+    codes = [post(f"question {i}").status_code for i in range(5)]
+    assert codes == [200, 200, 200, 429, 429] and len(llm.calls) == 3

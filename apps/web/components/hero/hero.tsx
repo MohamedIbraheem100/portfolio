@@ -1,8 +1,7 @@
 import { preload } from "react-dom";
 import { ButtonLink } from "@/components/ui/button-link";
-import { TrackLink } from "@/components/ui/track-link";
+import { AskTwinButton } from "@/components/chat/ask-twin-button";
 import { PortraitCloud } from "@/components/hero/portrait-cloud";
-import { CV_PDF_URL } from "@/lib/cv";
 import type { Resume } from "@/lib/resume";
 import { isTodo } from "@/lib/resume";
 
@@ -40,9 +39,7 @@ export function Hero({ resume }: { resume: Resume }) {
               <ButtonLink href="/fit" variant="primary">
                 Screen my CV against your role
               </ButtonLink>
-              <TrackLink event="download_cv" href={CV_PDF_URL} variant="text">
-                Download CV
-              </TrackLink>
+              <AskTwinButton />
             </div>
           </div>
 
