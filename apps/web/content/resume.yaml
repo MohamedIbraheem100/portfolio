@@ -38,7 +38,7 @@ experience:
     title: AI Engineer
     start: "2026-08"
     end: null            # null = present
-    location: "TODO(content)"
+    location: UAE (remote)
     # From the owner's own H.Hunters work sessions and his description of the role; approved by him
     # 2026-11-14. Kept at the level he can explain in an interview.
     impact:
@@ -48,15 +48,18 @@ experience:
       - "Migrated the AI services to a new production server on Docker Compose and maintain them, diagnosing and fixing live issues."
     public_notes: "Owner, 2026-11-14: his AI work and any AI feature may be described. Not the company's business, not client data."
   - company: AL Master IT Solutions
-    title: AI Engineer
+    # Interview 2026-11-14: an internship done by his NTI team of five. The certificate says
+    # "AI Engineer Intern", lists his achievements and rates him highest in the team. His part was
+    # the backend and the infrastructure. The before/after latency figures were not kept.
+    title: AI Engineer Intern
     start: "2026-04"
     end: "2026-07"
     location: "TODO(content): city / remote"
     impact:
-      - "Designed and deployed a production agentic RAG chatbot that serves customers in Arabic and English (LangGraph, FastAPI)."
-      - "Reduced inference and retrieval latency by more than 30%, bringing responses under one second."
-      - "Built the backend on PostgreSQL, Redis and a vector database, with authentication, rate limiting and conversation persistence."
-      - "Added an appointment-booking path in which the agent calls the CRM and emails the details to the company."
+      - "Built the backend and infrastructure of a production agentic chatbot (LangGraph, FastAPI) that answers customers in Arabic and English and books appointments through the CRM, in a team of five."
+      - "Reduced inference and retrieval latency by more than 30%, to under one second, by moving to faster models and running embedding and routing in parallel."
+      - "Implemented caching and rate limiting with Redis, on a backend of PostgreSQL and a vector database."
+      - "Received the highest evaluation in the team on the internship certificate."
   - company: National Telecommunication Institute (NTI)
     title: AI Engineering Trainee, Advanced Computer Vision
     start: "2026-01"
@@ -135,10 +138,10 @@ projects:
   - slug: al-master-chatbot
     name: Bilingual agentic chatbot (AL Master)
     one_liner: "Production agentic RAG chatbot for customer interactions in Arabic and English, answering in under a second."
-    role: AI Engineer, architecture and deployment
+    role: "AI Engineer Intern: backend and infrastructure, in a team of five"
     stack: [LangGraph, FastAPI, Redis, PostgreSQL, Vector database]
     results:
-      - "30%+ lower inference and retrieval latency, sub-second responses."
+      - "More than 30% lower inference and retrieval latency, with responses under one second, from faster models and from running embedding and routing in parallel."
       - "The agent routes each message to general chat, retrieval or appointment booking; booking calls the CRM and emails the details to the company."
     what_failed: "TODO(content)"
     links: {}

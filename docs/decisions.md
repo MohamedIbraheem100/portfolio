@@ -254,6 +254,9 @@ Folded into CLAUDE.md once the list is complete.
   short example replies; the twin answers in text.
 - `faq.md` ends with "Not in the knowledge base yet": the questions the twin must hand to Mohamed
   instead of guessing (notice period, salary, visa status, how the 30% at AL Master was measured).
+- AL Master was an internship done by his NTI team of five. The title is now the one on his
+  certificate, "AI Engineer Intern", and the lines describe his part (backend, infrastructure,
+  Redis caching and rate limiting). A CV title must survive a reference check.
 - One number was corrected against the source: Mizan's batch of 10 CVs went from 220 s to about
   90 s (ADR-0003 in the Mizan repo), not 70 s.
 - `tests/test_knowledge.py` runs in CI before any model reads the files: all eight exist, no

@@ -13,4 +13,5 @@ Source: my interview answers (2026-11-14) and how this portfolio and Mizan were 
 - In production work I own what I ship: when a service of mine breaks live, I am the one who
   diagnoses and fixes it.
 - I am comfortable in a team: Cashy, SpotLight and the AL Master chatbot were all team
-  projects with a clear part that was mine.
+  projects with a clear part that was mine, and at AL Master I finished with the highest
+  evaluation in the team.

@@ -4,8 +4,9 @@ Source: resume.yaml and my interview answers (2026-11-14). Every number here is 
 
 ## H.Hunters, AI Engineer (August 2026 to present)
 
-H.Hunters builds an AI restaurant-management platform. I describe my own AI work, not the
-company's business or its customers.
+H.Hunters is a company based in the UAE that builds an AI restaurant-management platform. I
+work there full-time and remotely. I describe my own AI work, not the company's business or
+its customers.
 
 - I own the AI services behind the restaurant owner dashboard, in production, written in
   Python and FastAPI: AI insights and recommendations, customer activity segmentation, usage
@@ -29,18 +30,22 @@ is recorded; if its result is unknown it goes to a human instead of being retrie
 What I learned: do not trust the documented shape of the data. Confirm it from a real call log
 and write the test from that.
 
-## AL Master IT Solutions (April to July 2026)
+## AL Master IT Solutions, AI Engineer Intern (April to July 2026)
 
-- This was a training engagement: my NTI team of five built the project at the company.
+- This was an internship. My NTI team of five built the project at the company.
 - We built a production agentic chatbot that serves customers in Arabic and English, with
   LangGraph and FastAPI.
 - The agent routes each message to one of three paths: general chat, retrieval (RAG) over the
   company's knowledge, or appointment booking. Booking calls the CRM and emails the details to
   the company.
+- My part was the backend and the infrastructure: I set the project up (structure, files,
+  configuration) and built the caching and the rate limiting with Redis.
 - Inference and retrieval latency went down by more than 30%, which brought responses under
-  one second.
-- The backend runs on PostgreSQL, Redis and a vector database, with authentication, rate
-  limiting and conversation persistence.
+  one second. We got there by moving to faster models, and I made the embedding and the
+  routing step run at the same time instead of one after the other. I did not keep the exact
+  before and after figures.
+- My internship certificate lists my achievements and gives me the highest evaluation in the
+  team.
 
 ## National Telecommunication Institute (NTI), Advanced Computer Vision trainee (January to April 2026)
 
