@@ -11,6 +11,7 @@ the fallback sentence is expected. It costs real quota, so it is not part of CI.
 
 from __future__ import annotations
 
+import re
 import sys
 import time
 from pathlib import Path
@@ -60,6 +61,23 @@ CASES: list[tuple[str, str, list[tuple[str, ...]], list[str], bool]] = [
         "What do you do at H.Hunters?",
         [("dashboard", "voice")],
         ["customer names"],
+        False,
+    ),
+    # the four starter questions of the chat panel: the answers most visitors will read
+    ("st-intro", "Introduce yourself in 30 seconds.", [("I am", "I'm")], [], False),
+    ("st-production", "What have you built that runs in production?", [("I ",)], [], False),
+    (
+        "st-proudest",
+        "Which project are you proudest of, and what was your part?",
+        [("I ", "my ")],
+        [],
+        False,
+    ),
+    (
+        "st-available",
+        "Are you available, and which roles are you looking for?",
+        [("AI Engineer",)],
+        [],
         False,
     ),
     # must hand over to Mohamed
@@ -162,7 +180,8 @@ def judge(case, result) -> list[str]:
         problems.append("should hand over to Mohamed")
     if result.source == "busy":
         problems.append("busy")
-    if " he " in f" {low} " and "mohamed" not in low:
+    # Speaking about Mohamed instead of as him. "reach him" and "email him" are fine.
+    if re.search(r"(he|mohamed) (is|was|has|had|built|builds|works|worked|owns|can|will|did)", low):
         problems.append("third person")
     return problems
 

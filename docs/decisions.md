@@ -339,3 +339,9 @@ Folded into CLAUDE.md once the list is complete.
   only talks about his work, plus two things it can answer, with no email. Before this, "do you
   have shampoo?" was answered with "I'd rather Mohamed answer that himself".
 - Live eval grew to 24 questions (shampoo, an insult, politics, a joke): 24 of 24.
+- Found on production right after the release: the first starter question ("Introduce yourself")
+  was answered as "He is an AI engineer ...". The prompt now gives the opening explicitly ("I am
+  Mohamed's AI twin, so I answer as him. I am ..."), replies follow the visitor's language for
+  refusals too, and the live eval gained the four starter questions and a stricter check for
+  speaking about him instead of as him: 28 of 28. A prompt change empties the answer cache by
+  itself, so the cached third-person answer disappears with this release.
