@@ -345,3 +345,37 @@ Folded into CLAUDE.md once the list is complete.
   refusals too, and the live eval gained the four starter questions and a stricter check for
   speaking about him instead of as him: 28 of 28. A prompt change empties the answer cache by
   itself, so the cached third-person answer disappears with this release.
+
+## D38. SpotLight's video lives in the repo; the Lab becomes a demo inside Cashy's scene (2026-11-14)
+- SpotLight's scene now plays the owner's clip (one scene in four views: foreground mask, wall mask,
+  two results). It is re-encoded to H.264, 848x480, no audio, 1.1 MB, with a 30 KB poster, and
+  shipped from `public/work/`. That departs from "videos on Hugging Face" on purpose: a clip of
+  about 1 MB is lighter than the point files already in the repo, and it needs no second host.
+  Larger videos still go to Hugging Face. The WebM encode came out bigger than the MP4 and was
+  dropped. The video is muted, loops, loads nothing until it is near the viewport, plays only while
+  on screen, and never starts by itself under reduced motion.
+- The clip shows footage from a TV series and real brand advertisements used as test material.
+  Kept by the owner's choice as a demonstration of the project.
+- Owner's calls for W4: no pretrained YOLO demo (not his work), and no `/lab` page. Cashy gets a
+  "try it live" inside its scene: upload or pick a photo, get the denomination and the
+  genuine/counterfeit result from his own two models, in the browser.
+
+## D39. Cashy live: the denomination model in the browser (W4, 2026-11-14)
+- Cashy's scene has a "Try it live" block: four sample photos or the visitor's own photo, and the
+  owner's denomination model names the note (5 to 200 EGP, plus the two polymer notes) with a box
+  and its confidence. Below 0.5 the answer is "Not confident" (D16).
+- It runs in the browser: ONNX Runtime Web on WebAssembly inside a Web Worker, one thread (the home
+  page is not cross-origin isolated). The photo never leaves the device. Measured on localhost
+  with the owner's four samples: all correct (0.90 to 0.95), about 1.5 s a photo once the model is
+  loaded. The first try also downloads and starts the model.
+- The model is the owner's YOLOv8s (`grb.pt`) exported to ONNX. Its weights are stored as float16
+  and cast back to float32 at load (44.8 MB down to 22.4 MB, same answers on the seven samples);
+  the arithmetic stays float32 so plain WASM runs it. The file is not in the repo: its address is
+  `NEXT_PUBLIC_CASHY_MODEL_URL` (Hugging Face in production), and without it the scene stays text
+  only.
+- The counterfeit model is NOT in the public demo. Tested on 2026-11-14 with the owner's filter
+  (grayscale, 3x3 kernel) and 16 preparation variants, it never returned `fake-or-try-again` on
+  his three counterfeit samples and called one of them a genuine 50. It can join the demo if the
+  exact training preparation or better weights turn up and it passes on his samples.
+- The CLAUDE.md "Vision Lab" section is replaced by this: no `/lab` page, no pretrained model, no
+  COOP/COEP headers anywhere.

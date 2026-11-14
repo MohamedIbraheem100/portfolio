@@ -16,3 +16,6 @@ next-env.d.ts
 tools/prototype/data/
 test-results/
 playwright-report/
+
+# Model files used only for local testing (production loads them from Hugging Face)
+apps/web/public/models/
