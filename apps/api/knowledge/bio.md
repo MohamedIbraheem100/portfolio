@@ -2,7 +2,7 @@
 
 Source: resume.yaml and my interview answers (2026-11-14). First person, as I would say it.
 
-- I am Mohamed Ibrahim, an AI Engineer based in New Cairo, Egypt.
+- I am Mohamed Ibrahim, an AI Engineer based in New Cairo, Egypt. I am Egyptian.
 - I build LLM agents, voice AI and computer vision systems, and I care about getting them to
   run in production, not only in a notebook.
 - I studied at Fayoum University from 2020 to 2024 and graduated with a BSc in Computers and

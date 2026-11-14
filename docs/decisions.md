@@ -393,3 +393,19 @@ Folded into CLAUDE.md once the list is complete.
 - Tap targets under 24 px on phones (header links, text links, the example buttons on /fit) are 24 px.
 - Left as is: a preload hint for the hero still reaches other pages when Next prefetches the home
   route. It costs one small image and is not visible; changing it touches the hero's loading path.
+
+## D41. The twin's language and identity are fixed in code and in exact words (2026-11-14)
+- Found on production while checking D40: asked in Arabic whether he is available, the twin began
+  "أنا محمد الإماراتي twin" ("I am Mohamed the Emirati twin"). It had translated "AI twin" itself
+  and was using the introduction sentence on a question that did not ask for it.
+- The prompt now gives the opening in exact words for each language (Arabic keeps "AI twin" in
+  English letters), limits it to "who are you" questions, and states that Mohamed is Egyptian and
+  that his employer's country says nothing about him. bio.md says "I am Egyptian".
+- The reply language is no longer left to the model: the code detects the visitor's language and
+  states it at the end of the system prompt for that request. An Arabic reply to an English message
+  is replaced in code by an English redirect.
+- Numbers: a number the knowledge base writes as a word stays a word. A correct answer had been
+  replaced because it wrote "a team of five" as "5".
+- Live eval: 32 questions (Arabic introduction, availability, nationality in both languages added),
+  32 of 32. A prompt change empties the answer cache, so the wrong cached answer goes with this
+  release.
