@@ -94,6 +94,30 @@ class RateLimiter:
             )
 
 
+def _burst_error() -> HTTPException:
+    return HTTPException(
+        status.HTTP_429_TOO_MANY_REQUESTS,
+        "You are sending messages very quickly. Please wait a minute and try again.",
+    )
+
+
+def hit_burst(
+    limiter: RateLimiter, scope: str, visitor: str, limit: int, window_s: int = 60
+) -> None:
+    """Short-window limit on top of the daily one: at most `limit` hits per `window_s`.
+
+    Same failure rule as the daily limit: an unreachable backend lets the request through.
+    """
+    bucket = int(time.time() // window_s)
+    try:
+        count = limiter.backend.incr_with_ttl(f"{scope}:burst:{visitor}:{bucket}", window_s * 2)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("rate limit backend unavailable: %s", exc)
+        return
+    if count > limit:
+        raise _burst_error()
+
+
 @lru_cache
 def get_limiter() -> RateLimiter:
     s = get_settings()

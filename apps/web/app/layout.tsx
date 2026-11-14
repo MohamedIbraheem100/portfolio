@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { arabic, body, display, mono } from "./fonts";
+import { ChatLauncher } from "@/components/chat/chat-launcher";
 import { site } from "@/lib/site";
 import { SiteHeader } from "@/components/ui/site-header";
 import { SiteFooter } from "@/components/ui/site-footer";
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
+        <ChatLauncher />
         <PersonJsonLd />
         <SmoothScroll />
         <Analytics />
