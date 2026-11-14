@@ -379,3 +379,17 @@ Folded into CLAUDE.md once the list is complete.
   exact training preparation or better weights turn up and it passes on his samples.
 - The CLAUDE.md "Vision Lab" section is replaced by this: no `/lab` page, no pretrained model, no
   COOP/COEP headers anywhere.
+
+## D40. Polish pass (W7, 2026-11-14)
+- Arabic replies in the chat showed as separate letters on iPhone. The Arabic font had been subset
+  with a Latin feature list, which dropped `init`, `medi` and `fina`, the features that join Arabic
+  letters. Chrome rebuilds the joins from the presentation forms; Safari does not. The subset is
+  rebuilt with every layout feature (35.8 KB to 42.6 KB; it is only fetched when Arabic is shown).
+  Rule for any future subset: an Arabic font keeps all its layout features.
+- The portrait's point file was downloaded twice on the home page: the head script preloads it with
+  `crossorigin`, and the loader fetched it with `credentials: "omit"`, which does not match. The
+  loader now uses the default credentials and the preload is used.
+- Every page states its canonical address. The CV page has a real description.
+- Tap targets under 24 px on phones (header links, text links, the example buttons on /fit) are 24 px.
+- Left as is: a preload hint for the hero still reaches other pages when Next prefetches the home
+  route. It costs one small image and is not visible; changing it touches the hero's loading path.

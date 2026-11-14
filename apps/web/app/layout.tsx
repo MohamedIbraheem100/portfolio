@@ -18,6 +18,8 @@ export const metadata: Metadata = {
     template: `%s · ${site.name}`,
   },
   description: site.description,
+  // Every page names itself as the canonical address ("./" resolves against the current route).
+  alternates: { canonical: "./" },
   openGraph: {
     type: "website",
     siteName: site.name,

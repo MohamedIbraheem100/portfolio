@@ -4,7 +4,7 @@
 Personal portfolio of **Mohamed Ibrahim, AI Engineer** (agentic systems + applied computer vision).
 Spelling is **Mohamed Ibrahim** everywhere (site, CV, JSON-LD, domain). Domain: `mohamedibrahim.is-a.dev`
 (registered 2026-11-09 via is-a-dev/register#60489; also live at `mohamedibrahim-ai.vercel.app`).
-Every settled decision and its reason lives in `docs/decisions.md` (D1-D39). Read it before proposing a change.
+Every settled decision and its reason lives in `docs/decisions.md` (D1-D40). Read it before proposing a change.
 Status: W0, W1, W5, W3 and W2 (AI Twin) are shipped. W4 is the Cashy live demo (D39). Next: W6 case studies, W7 polish.
 Audience: recruiters and hiring managers. Goal: in 10 seconds they know who he is; in 1 minute they
 have *used* something he built.
