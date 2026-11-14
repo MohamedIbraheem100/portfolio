@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { TwinOrb } from "@/components/chat/twin-orb";
 import { trackEvent } from "@/lib/analytics";
 import { readSse } from "@/lib/sse";
 
 /*
-  The AI twin's chat (W2). A floating panel, not a page: it stays beside the content
-  so a visitor can ask and verify. On a phone it is a sheet over the lower part of
-  the screen; the page above it still scrolls.
+  The AI twin's chat (W2, D36/D37). A floating panel, not a page: it stays beside the
+  content so a visitor can ask and verify. On a phone it is a sheet over the lower
+  part of the screen; the page above it still scrolls.
 
   The conversation lives in sessionStorage: it survives page changes and a reload,
   and it is gone when the tab closes. Nothing is stored on the server.
-  /api/chat returns one whole answer that the API has already checked, so there is
-  nothing to stream: while waiting, the panel shows a turning ring and "Thinking",
-  with no clock (D32).
+
+  /api/chat returns one whole answer that the API has already checked. The panel
+  then writes it out word by word, which reads better than a block landing at once.
+  While waiting, the point sphere in the header turns faster and warms to amber and
+  three dots pulse in the thread; no clock anywhere (D32).
 */
 
 type Message = { role: "user" | "assistant"; text: string; lang: "ar" | "en" };
@@ -28,10 +31,19 @@ const STARTERS = [
   "Which project are you proudest of, and what was your part?",
   "Are you available, and which roles are you looking for?",
 ];
+// Offered two at a time after an answer, skipping what was already asked.
+const FOLLOW_UPS = [
+  ...STARTERS,
+  "What is your tech stack?",
+  "What was the hardest problem you solved?",
+  "What did you do at H.Hunters?",
+  "How do you work with AI coding assistants?",
+];
+const WORD_MS = 26;
 
 const isArabic = (text: string) => /[؀-ۿ]/.test(text);
-
 const nowSeconds = () => Date.now() / 1000;
+const CORNER = "pointer-events-none absolute size-2 border-amber";
 
 function loadConversation(): Message[] {
   try {
@@ -47,11 +59,34 @@ function loadConversation(): Message[] {
   }
 }
 
+/* Writes an answer out word by word. Under reduced motion it is shown at once. */
+function Typed({ text, onProgress, onDone }: { text: string; onProgress: () => void; onDone: () => void }) {
+  const words = useMemo(() => text.split(/(\s+)/), [text]);
+  const [shown, setShown] = useState(0);
+  const done = shown >= words.length;
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const id = window.setTimeout(() => setShown(words.length), 0);
+      return () => window.clearTimeout(id);
+    }
+    const id = window.setInterval(() => setShown((n) => n + 2), WORD_MS); // a word and its space
+    return () => window.clearInterval(id);
+  }, [words]);
+  useEffect(() => {
+    onProgress();
+    if (done) onDone();
+  }, [shown, done, onProgress, onDone]);
+
+  return <>{done ? text : words.slice(0, shown).join("")}</>;
+}
+
 export function ChatPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   // Client-only component (loaded with ssr: false), so reading storage here is safe.
   const [messages, setMessages] = useState<Message[]>(loadConversation);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
+  const [typing, setTyping] = useState(false); // the newest answer is still being written out
   const [notice, setNotice] = useState<string | null>(null);
   const token = useRef<{ value: string; expires: number } | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -66,11 +101,14 @@ export function ChatPanel({ open, onClose }: { open: boolean; onClose: () => voi
     }
   }, [messages]);
 
-  // Keep the newest message in view, and put the cursor in the field when the panel opens.
-  useEffect(() => {
+  const toBottom = useCallback(() => {
     const el = scroller.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, pending, open]);
+  }, []);
+  const typingDone = useCallback(() => setTyping(false), []);
+  useEffect(() => {
+    toBottom();
+  }, [toBottom, messages, pending, typing, open]);
   useEffect(() => {
     if (open) field.current?.focus();
   }, [open]);
@@ -93,7 +131,9 @@ export function ChatPanel({ open, onClose }: { open: boolean; onClose: () => voi
     const history = messages.slice(-HISTORY_TURNS).map(({ role, text }) => ({ role, text }));
     setMessages((m) => [...m, { role: "user", text: question, lang: isArabic(question) ? "ar" : "en" }]);
     setInput("");
+    if (field.current) field.current.style.height = "";
     setNotice(null);
+    setTyping(false);
     setPending(true);
     const controller = new AbortController();
     abort.current = controller;
@@ -118,6 +158,7 @@ export function ChatPanel({ open, onClose }: { open: boolean; onClose: () => voi
           if (event !== "answer") return;
           const p = JSON.parse(data) as { text: string; lang: "ar" | "en" };
           answered = true;
+          setTyping(true);
           setMessages((m) => [...m, { role: "assistant", text: p.text, lang: p.lang === "ar" ? "ar" : "en" }]);
         },
         controller.signal,
@@ -146,139 +187,193 @@ export function ChatPanel({ open, onClose }: { open: boolean; onClose: () => voi
       onClose();
     }
   }
+  function onInput(value: string) {
+    setInput(value);
+    const el = field.current;
+    if (el) {
+      el.style.height = "auto"; // grow with the text, up to four lines
+      el.style.height = `${Math.min(el.scrollHeight, 112)}px`;
+    }
+  }
   function clear() {
     abort.current?.abort();
     setMessages([]);
     setNotice(null);
     setPending(false);
+    setTyping(false);
   }
 
   if (!open) return null;
+
+  const asked = new Set(messages.filter((m) => m.role === "user").map((m) => m.text));
+  const last = messages[messages.length - 1];
+  const followUps =
+    last?.role === "assistant" && !pending && !typing ? FOLLOW_UPS.filter((q) => !asked.has(q)).slice(0, 2) : [];
+  const canSend = Boolean(input.trim()) && !pending;
 
   return (
     <section
       role="dialog"
       aria-label="Chat with Mohamed's AI twin"
-      className="fixed inset-x-0 bottom-0 z-50 flex h-[72dvh] flex-col rounded-t-box border border-phosphor/20 bg-night-raised shadow-[0_18px_60px_rgba(0,0,0,0.55)] md:inset-x-auto md:bottom-6 md:right-6 md:h-[34rem] md:max-h-[calc(100dvh-3rem)] md:w-[24rem] md:rounded-box print:hidden"
+      className="twin-panel fixed inset-x-0 bottom-0 z-50 flex h-[76dvh] flex-col overflow-hidden rounded-t-[1.25rem] border border-phosphor/15 bg-night-raised bg-[radial-gradient(120%_55%_at_50%_0%,rgba(52,66,138,0.5),rgba(22,29,69,0)_70%)] shadow-[0_24px_70px_rgba(0,0,0,0.6),0_0_40px_rgba(255,176,31,0.07)] md:inset-x-auto md:bottom-8 md:right-8 md:h-[36rem] md:max-h-[calc(100dvh-4rem)] md:w-[25rem] md:rounded-[1.25rem] print:hidden"
     >
-      <header className="flex items-start justify-between gap-3 border-b border-phosphor/10 px-4 py-3">
-        <div>
-          <p className="font-display text-body font-medium text-phosphor">Mohamed&rsquo;s AI twin</p>
-          <p className="mt-1 text-small text-dim">
-            An AI trained on Mohamed&rsquo;s work. For anything important,{" "}
-            <a
-              href={`mailto:${EMAIL}`}
-              onClick={() => trackEvent("click_email")}
-              className="underline decoration-dim/60 underline-offset-4 hover:text-amber hover:decoration-amber"
-            >
-              email him
-            </a>
-            .
+      <header className="flex items-center gap-3 border-b border-phosphor/10 px-4 py-3">
+        <span className="relative flex size-11 shrink-0 items-center justify-center">
+          <TwinOrb size={38} active={pending} />
+          <span aria-hidden="true" className={`${CORNER} left-0 top-0 border-l border-t`} />
+          <span aria-hidden="true" className={`${CORNER} right-0 top-0 border-r border-t`} />
+          <span aria-hidden="true" className={`${CORNER} bottom-0 left-0 border-b border-l`} />
+          <span aria-hidden="true" className={`${CORNER} bottom-0 right-0 border-b border-r`} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-body font-medium leading-tight text-phosphor">Mohamed&rsquo;s AI twin</p>
+          <p className="mt-1 flex items-center gap-2 text-small leading-none text-dim">
+            <span aria-hidden="true" className="twin-online block size-2 rounded-full" />
+            <span role="status">{pending ? "Thinking" : "Online"}</span>
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {messages.length > 0 && (
-            <button
-              type="button"
-              onClick={clear}
-              className="h-9 px-2 text-small text-dim underline decoration-dim/50 underline-offset-4 hover:text-amber hover:decoration-amber"
-            >
-              Clear
-            </button>
-          )}
+        {messages.length > 0 && (
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close chat"
-            className="flex size-9 items-center justify-center rounded-box text-dim hover:text-amber"
+            onClick={clear}
+            className="h-9 px-2 text-small text-dim underline decoration-dim/50 underline-offset-4 hover:text-amber hover:decoration-amber"
           >
-            <svg aria-hidden="true" viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <path d="M2 2l8 8M10 2l-8 8" />
-            </svg>
+            Clear
           </button>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close chat"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full text-dim transition-colors hover:bg-phosphor/10 hover:text-phosphor"
+        >
+          <svg aria-hidden="true" viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+            <path d="M2 2l8 8M10 2l-8 8" />
+          </svg>
+        </button>
       </header>
 
-      <div ref={scroller} data-lenis-prevent className="flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4">
+      <div ref={scroller} data-lenis-prevent className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+        <p className="text-small text-dim">
+          An AI trained on Mohamed&rsquo;s work. For anything important,{" "}
+          <a
+            href={`mailto:${EMAIL}`}
+            onClick={() => trackEvent("click_email")}
+            className="underline decoration-dim/60 underline-offset-4 hover:text-amber hover:decoration-amber"
+          >
+            email him
+          </a>
+          .
+        </p>
+
         {messages.length === 0 && !pending && (
-          <div>
-            <p className="text-small text-dim">Ask about my work, projects, skills or availability. Try one:</p>
-            <ul className="mt-3 space-y-2">
-              {STARTERS.map((q) => (
-                <li key={q}>
-                  <button
-                    type="button"
-                    onClick={() => void send(q)}
-                    className="w-full rounded-box border border-phosphor/15 px-3 py-2 text-left text-small text-phosphor transition-colors duration-150 hover:border-amber hover:text-amber"
-                  >
-                    {q}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="mt-4 space-y-2">
+            {STARTERS.map((q, i) => (
+              <li key={q} className="twin-message" style={{ animationDelay: `${i * 60}ms` }}>
+                <button
+                  type="button"
+                  onClick={() => void send(q)}
+                  className="w-full rounded-[0.9rem] border border-phosphor/15 bg-night/40 px-3.5 py-2.5 text-left text-small text-phosphor transition-colors duration-150 hover:border-amber hover:bg-night/70"
+                >
+                  {q}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
 
-        <ol aria-live="polite" aria-label="Conversation" className="space-y-4">
+        <ol aria-live="polite" aria-label="Conversation" className="mt-4 flex flex-col gap-3">
           {messages.map((m, i) => (
             <li
               key={i}
               lang={m.lang}
               dir={m.lang === "ar" ? "rtl" : "ltr"}
-              className={
+              className={`twin-message max-w-[88%] px-3.5 py-2.5 text-small leading-relaxed text-phosphor ${
                 m.role === "user"
-                  ? "ml-10 rounded-box bg-night px-3 py-2 text-small text-phosphor"
-                  : "border-l-2 border-amber pl-3 text-small text-phosphor [&[dir=rtl]]:border-l-0 [&[dir=rtl]]:border-r-2 [&[dir=rtl]]:pl-0 [&[dir=rtl]]:pr-3"
-              }
+                  ? "self-end rounded-[1rem] rounded-br-[0.25rem] bg-phosphor/[0.12]"
+                  : "self-start rounded-[1rem] rounded-bl-[0.25rem] border border-phosphor/10 bg-night/70"
+              }`}
             >
               <span className="sr-only">{m.role === "user" ? "You: " : "AI twin: "}</span>
-              <span className="whitespace-pre-wrap break-words">{m.text}</span>
+              <span className="whitespace-pre-wrap break-words">
+                {m.role === "assistant" && typing && i === messages.length - 1 ? (
+                  <Typed text={m.text} onProgress={toBottom} onDone={typingDone} />
+                ) : (
+                  m.text
+                )}
+              </span>
             </li>
           ))}
         </ol>
 
         {pending && (
-          <p role="status" className="flex items-center gap-3">
-            <span aria-hidden="true" className="fit-spinner block size-4 shrink-0" />
-            <span className="status-shimmer font-display text-body font-medium">Thinking</span>
+          <p className="twin-message twin-dots mt-3 inline-flex items-center gap-1.5 self-start rounded-[1rem] rounded-bl-[0.25rem] border border-phosphor/10 bg-night/70 px-4 py-3.5">
+            <span className="block size-1.5 rounded-full bg-amber" />
+            <span className="block size-1.5 rounded-full bg-amber" />
+            <span className="block size-1.5 rounded-full bg-amber" />
+            <span className="sr-only">Thinking</span>
           </p>
         )}
+
+        {followUps.length > 0 && (
+          <ul className="mt-4 flex flex-wrap gap-2" aria-label="Suggested questions">
+            {followUps.map((q) => (
+              <li key={q} className="twin-message">
+                <button
+                  type="button"
+                  onClick={() => void send(q)}
+                  className="rounded-full border border-phosphor/20 px-3 py-1.5 text-left text-small text-dim transition-colors duration-150 hover:border-amber hover:text-phosphor"
+                >
+                  {q}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
         {notice && (
-          <p role="alert" className="border-l-2 border-amber pl-3 text-small text-phosphor">
+          <p role="alert" className="twin-message mt-4 rounded-[0.9rem] border border-amber/40 px-3.5 py-2.5 text-small text-phosphor">
             {notice}
           </p>
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="flex items-end gap-2 border-t border-phosphor/10 p-3">
-        <label htmlFor="twin-input" className="sr-only">
-          Your question
-        </label>
-        <textarea
-          id="twin-input"
-          ref={field}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          rows={2}
-          maxLength={MAX_CHARS}
-          dir="auto"
-          placeholder="Ask in English or Arabic"
-          className="min-h-11 flex-1 resize-none rounded-box border border-phosphor/20 bg-night px-3 py-2 text-small text-phosphor placeholder:text-dim/70 focus:border-amber"
-        />
-        <button
-          type="submit"
-          disabled={pending || !input.trim()}
-          className="h-11 rounded-box border border-phosphor/30 px-4 font-display text-small font-medium text-phosphor transition-colors duration-150 hover:border-amber hover:text-amber active:scale-[0.98] disabled:opacity-50"
-        >
-          Send
-        </button>
+      <form onSubmit={onSubmit} className="border-t border-phosphor/10 p-3">
+        <div className="flex items-end gap-2 rounded-[1.4rem] border border-phosphor/20 bg-night/70 py-1.5 pl-4 pr-1.5 transition-colors focus-within:border-amber">
+          <label htmlFor="twin-input" className="sr-only">
+            Your question
+          </label>
+          <textarea
+            id="twin-input"
+            ref={field}
+            value={input}
+            onChange={(e) => onInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            rows={1}
+            maxLength={MAX_CHARS}
+            dir="auto"
+            placeholder="Ask in English or Arabic"
+            className="max-h-28 min-h-9 flex-1 resize-none bg-transparent py-1.5 text-small text-phosphor outline-none placeholder:text-dim/70 focus-visible:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!canSend}
+            aria-label="Send"
+            className={`flex size-9 shrink-0 items-center justify-center rounded-full transition-colors duration-150 active:scale-95 ${
+              canSend ? "bg-amber text-night hover:bg-[#ffc14a]" : "bg-phosphor/10 text-dim"
+            }`}
+          >
+            <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" />
+            </svg>
+          </button>
+        </div>
+        {input.length > MAX_CHARS - 100 && (
+          <p className="mt-1 px-2 text-right font-mono text-small text-dim">
+            {input.length} / {MAX_CHARS}
+          </p>
+        )}
       </form>
-      {input.length > MAX_CHARS - 100 && (
-        <p className="px-4 pb-2 text-right font-mono text-small text-dim">
-          {input.length} / {MAX_CHARS}
-        </p>
-      )}
     </section>
   );
 }

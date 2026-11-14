@@ -4,7 +4,7 @@
 Personal portfolio of **Mohamed Ibrahim, AI Engineer** (agentic systems + applied computer vision).
 Spelling is **Mohamed Ibrahim** everywhere (site, CV, JSON-LD, domain). Domain: `mohamedibrahim.is-a.dev`
 (registered 2026-11-09 via is-a-dev/register#60489; also live at `mohamedibrahim-ai.vercel.app`).
-Every settled decision and its reason lives in `docs/decisions.md` (D1-D36). Read it before proposing a change.
+Every settled decision and its reason lives in `docs/decisions.md` (D1-D37). Read it before proposing a change.
 Status: W0, W1, W5, W3 and W2 (AI Twin) are shipped. Next: W4 Vision Lab + Cashy.
 Audience: recruiters and hiring managers. Goal: in 10 seconds they know who he is; in 1 minute they
 have *used* something he built.
@@ -67,6 +67,7 @@ Colors:
 - `night-raised` #161D45 (raised surfaces: chat panel, demo frames)
 - `phosphor` #E9ECF5 (primary text) · `dim` #8B92AB (secondary text)
 - `box-amber` #FFB01F: bounding boxes, focus rings, the primary CTA. The only action color.
+- `online` #3DDC84: ONLY the "online" dot of the AI twin (D37). Never an action, never decoration.
 - `inferno` ramp #320A5E → #8B2369 → #E1544A → #FCA50A → #FCFFA4: ONLY for heatmaps and model
   outputs (Lab). Not on the portrait (D26). Never as decoration, never as a background gradient.
 

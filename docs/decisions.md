@@ -313,3 +313,29 @@ Folded into CLAUDE.md once the list is complete.
   being replaced because it wrote April as 4. "7 years of experience" is still rejected.
 - Fixed in passing: the hero's glow overflowed the page sideways near 1024 px; `main` now clips it.
 - Live eval after these changes: 20 of 20, 1.3 s average, no answer replaced.
+
+## D37. The chat's look, and two ways of saying no (W2, 2026-11-14)
+- The owner tried D36 on localhost and found it plain next to the hero. Decisions taken with him:
+  - No second use of his portrait: it appears once, in the hero. The twin's mark is a small sphere
+    of points turning in 3D (canvas 2D, about 90 points), inside the detector's amber brackets. It
+    turns faster and warms to amber while the twin is thinking, so it is also the waiting indicator.
+  - Launcher: stays in the lower right corner (where people look for a chat; higher up it would
+    cover the text), now a larger pill with the sphere, a light that travels around its edge, a
+    glow and lift on hover. Once per visit a short line rises above it, on phones too
+    ("Ask me anything"; longer on wide screens).
+  - A new status colour, `online` (#3DDC84), used only for the "online" dot. Amber stays the only
+    action colour.
+  - Hero: "Ask my AI twin" is a real outlined button, the same height as the amber one, with the
+    green dot.
+  - Panel: soft corners (the chat is the one place that leaves the 2 px box radius), message
+    bubbles that rise in, the answer written out word by word, three pulsing dots while waiting,
+    an input that grows with the text and an arrow button that turns amber when there is something
+    to send, an opening animation. No blur or glass (CLAUDE.md).
+  - Two suggested follow-up questions after each answer.
+  - Not built now, by his choice: "see it on the page" links under answers.
+- The twin now says no in two different ways. A question about Mohamed that it cannot answer
+  (salary, visa) still gets the hand-over sentence and the email. Anything unrelated (shopping,
+  politics, jokes, coding tasks) or rude gets one warm sentence that it is Mohamed's AI twin and
+  only talks about his work, plus two things it can answer, with no email. Before this, "do you
+  have shampoo?" was answered with "I'd rather Mohamed answer that himself".
+- Live eval grew to 24 questions (shampoo, an insult, politics, a joke): 24 of 24.

@@ -11,6 +11,8 @@
   --color-phosphor: #e9ecf5;
   --color-dim: #8b92ab;
   --color-amber: #ffb01f;
+  /* Status only: the "online" dot of the AI twin (D37). Never an action or a decoration. */
+  --color-online: #3ddc84;
   /* Inferno ramp: ONLY for the point cloud, heatmaps and model outputs. */
   --color-inferno-0: #320a5e;
   --color-inferno-1: #8b2369;
@@ -212,7 +214,73 @@ html.hero-live .hero-still {
   animation: fit-spin 0.8s linear infinite;
 }
 
+/* AI twin (components/chat). The launcher asks to be noticed: a light travels around its edge
+   and the "online" dot breathes. Inside the chat, things arrive instead of appearing. */
+@property --twin-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes twin-orbit {
+  to { --twin-angle: 360deg; }
+}
+.twin-edge::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--twin-angle), transparent 0deg 250deg, var(--color-amber) 320deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: twin-orbit 4.5s linear infinite;
+  pointer-events: none;
+}
+.twin-launcher {
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 22px rgba(255, 176, 31, 0.1);
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms;
+}
+.twin-launcher:hover, .twin-launcher:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55), 0 0 34px rgba(255, 176, 31, 0.28);
+}
+@keyframes twin-ping {
+  0% { transform: scale(1); opacity: 0.7; }
+  70%, 100% { transform: scale(2.6); opacity: 0; }
+}
+.twin-online { position: relative; background: var(--color-online); }
+.twin-online::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-online);
+  animation: twin-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes twin-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.twin-teaser { animation: twin-rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.twin-message { animation: twin-rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes twin-open {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.twin-panel { transform-origin: bottom right; animation: twin-open 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes twin-dot {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+.twin-dots > span { animation: twin-dot 1.2s ease-in-out infinite; }
+.twin-dots > span:nth-child(2) { animation-delay: 0.15s; }
+.twin-dots > span:nth-child(3) { animation-delay: 0.3s; }
+
 @media (prefers-reduced-motion: reduce) {
+  .twin-edge::before, .twin-online::after, .twin-dots > span { animation: none; }
+  .twin-teaser, .twin-message, .twin-panel { animation: none; }
+  .twin-launcher:hover, .twin-launcher:focus-visible { transform: none; }
   .detect-corner, .detect-label { animation: none; }
   .process-pulse { display: none; }
   .btn-sheen:hover::after { animation: none; }
