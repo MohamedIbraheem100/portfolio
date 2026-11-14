@@ -21,7 +21,8 @@ export function resumeToText(resume: Resume): string {
 
   line(basics.name);
   line(basics.role);
-  if (show(basics.headline)) line(basics.headline);
+  const profile = show(basics.profile) ? basics.profile : basics.headline;
+  if (show(profile)) line(profile);
   if (show(basics.location)) line(`Location: ${basics.location}`);
   if (show(basics.email)) line(`Email: ${basics.email}`);
   if (show(basics.links.linkedin)) line(`LinkedIn: ${basics.links.linkedin}`);

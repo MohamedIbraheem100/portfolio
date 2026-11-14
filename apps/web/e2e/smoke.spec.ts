@@ -67,6 +67,15 @@ test("the CV page and the plain-text CV render from resume.yaml", async ({ page,
   await expect(page.getByRole("heading", { level: 1, name: "Mohamed Ibrahim" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Experience" })).toBeVisible();
 
+  // The PDF is this page printed: the name and the contact line must survive, the site chrome must not.
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByRole("heading", { level: 1, name: "Mohamed Ibrahim" })).toBeVisible();
+  await expect(page.locator('main a[href^="mailto:"]').first()).toBeVisible();
+  await expect(page.getByRole("banner")).toBeHidden();
+  await expect(page.getByRole("contentinfo")).toBeHidden();
+  await expect(page.getByRole("link", { name: "Download PDF" })).toBeHidden();
+  await page.emulateMedia({ media: "screen" });
+
   const res = await request.get("/cv.txt");
   expect(res.status()).toBe(200);
   expect(res.headers()["content-type"]).toContain("text/plain");

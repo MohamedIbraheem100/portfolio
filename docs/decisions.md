@@ -220,3 +220,24 @@ Folded into CLAUDE.md once the list is complete.
   rewrite gzips and buffers it: measured locally, every event arrived together at the end.
 - A Stop button aborts the request in the browser. An answer from the 24 h cache says so and shows
   no checklist, because nothing was run.
+
+## D33. The CV is one document for screen and paper (2026-11-14)
+- The PDF visitors download was broken: a print rule on `header[class]` hid the CV's own name and
+  contact line, the dark color scheme painted the page margins near-black, and the two-column grid
+  ran to four pages. The owner asked to serve his hand-made 2025 PDF instead; that file is out of
+  date (wrong current employer, no Mizan) and carries his phone number, so it is not used.
+- `/cv` is now one column in reading order (name, contact, Profile, Experience, Education, Projects,
+  Skills, Certificates, Languages), the layout of his original. On screen it is a page of the site;
+  printed it is black on white, two A4 pages, real text, standard section names, no tables, icons or
+  columns, so an ATS reads it. D14 stands: CI prints it and publishes the release asset.
+- Work done for an employer is told once, under Experience: projects marked `demo: case-study` are
+  not repeated in the CV's Projects section. `/cv.txt` (what Mizan screens) is unchanged.
+- Site chrome hides itself in print with `print:hidden`; a smoke test prints the page in the browser
+  and checks that the name and email are visible and the chrome is not.
+- Content added the same day from the owner's answers: H.Hunters impact lines (drafted from his own
+  work sessions, his AI work only; wording and numbers await his confirmation), English B2, "Python"
+  in the skills, and `basics.profile`, a Profile paragraph for the CV that is separate from the hero
+  headline.
+- Phone number: the repo, the site and the published PDF are public, so the number stays out of all
+  three. `CV_PHONE=... node scripts/print-cv.mjs` prints a private copy with the number for sending
+  to an employer directly; it lives only in the git-ignored `assets-src/`.

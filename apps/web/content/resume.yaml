@@ -13,6 +13,9 @@ basics:
   role: AI Engineer
   # One sentence under the name in the hero. Restates CV facts only; wording awaiting owner approval.
   headline: "I build agentic systems and computer vision pipelines that run in production: a bilingual agentic chatbot that answers in under a second, and a banknote counterfeit detector at 95% mAP."
+  # The Profile paragraph of the CV (/cv, the PDF, /cv.txt). Drafted 2026-11-14 from CV facts and
+  # the owner's H.Hunters work sessions; wording awaiting his approval.
+  profile: "AI Engineer building LLM agents, voice AI and computer vision systems for production. Currently responsible for the AI services of a restaurant-management platform at H.Hunters, including an Arabic voice agent that takes phone orders. Previously delivered a bilingual RAG chatbot with sub-second responses and a banknote counterfeit detector at 95% mAP."
   location: New Cairo, Egypt
   email: mohamed.abdelwahed.ai@gmail.com
   links:
@@ -37,31 +40,34 @@ experience:
     start: "2026-08"
     end: null            # null = present
     location: "TODO(content)"
-    # Impact, not duties. 3-4 lines with numbers. Architecture and decisions only,
-    # no client data (CLAUDE.md: H.Hunters case study rules).
+    # Drafted 2026-11-14 from the owner's own H.Hunters work sessions and his description of the role
+    # (dashboard AI services, insights, recommendations, call agent, maintenance, server move).
+    # Kept at the level he can explain in an interview; wording awaits his confirmation.
     impact:
-      - "TODO(content): achievement with number"
-      - "TODO(content): achievement with number"
-    public_notes: "TODO(content): what may NOT be said publicly"
+      - "Own the AI services behind the restaurant owner dashboard in production (Python, FastAPI): AI insights and recommendations, customer activity segmentation, usage and cost analytics, and knowledge-base management."
+      - "Built an Arabic voice agent that takes restaurant phone orders over Vapi and ElevenLabs: an LLM-driven dialogue state machine handles ordering and confirmation, with per-restaurant call routing and session state in Redis."
+      - "Added safeguards for LLM cost and reliability in production: per-call rate limits, concurrency limits and a daily spend cap."
+      - "Migrated the AI services to a new production server on Docker Compose and maintain them, diagnosing and fixing live issues."
+    public_notes: "Owner, 2026-11-14: his AI work and any AI feature may be described. Not the company's business, not client data."
   - company: AL Master IT Solutions
     title: AI Engineer
     start: "2026-04"
     end: "2026-07"
     location: "TODO(content): city / remote"
     impact:
-      - "Architected and deployed a production bilingual agentic chatbot for real customer interactions."
-      - "Built agentic RAG workflows with LangGraph on FastAPI, Redis, PostgreSQL and a vector database, with authentication, rate limiting and API defenses."
-      - "Cut inference and retrieval latency by 30%+, bringing responses under one second."
-      - "Added conversation persistence and CRM automation for tracking."
+      - "Designed and deployed a production agentic RAG chatbot that serves customers in Arabic and English (LangGraph, FastAPI)."
+      - "Reduced inference and retrieval latency by more than 30%, bringing responses under one second."
+      - "Built the backend on PostgreSQL, Redis and a vector database, with authentication, rate limiting and conversation persistence."
+      - "Automated CRM updates from chatbot conversations."
   - company: National Telecommunication Institute (NTI)
     title: AI Engineering Trainee, Advanced Computer Vision
     start: "2026-01"
     end: "2026-04"
     location: Egypt
     impact:
-      - "End-to-end computer vision pipelines for classification, detection and segmentation."
+      - "Built computer vision pipelines for image classification, object detection and segmentation."
       - "Evaluated CNNs, Vision Transformers and multimodal models; built GANs, autoencoders and diffusion models for image synthesis."
-      - "LLM-driven agents with LangGraph for orchestration and task routing; capstone: SpotLight."
+      - "Built LLM agents with LangGraph for orchestration and task routing. Capstone project: SpotLight."
   - company: Watanya Company for Roads (military service)
     title: IT Engineer
     start: "2024-12"
@@ -69,8 +75,7 @@ experience:
     location: Egypt
     impact:
       - "Operated IP surveillance systems (NVRs, CCTV, RTSP streams) across multiple sites."
-      - "Supported integration of face and license plate recognition with live camera feeds."
-      - "Troubleshot system and network issues; managed storage and database operations for continuous monitoring."
+      - "Supported the integration of face and license plate recognition with live camera feeds and managed storage for continuous monitoring."
 
 projects:
   - slug: mizan
@@ -81,9 +86,9 @@ projects:
     stack: [Next.js, FastAPI, LangGraph, Gemini, Groq, Neon Postgres, Upstash Redis, Vercel]
     # Results below are stated on mizan-hr.vercel.app and enforced in its code (verify.py).
     results:
-      - "Every quote the model cites is checked in code against the CV line; a quote that is not there is discarded and the verdict falls to no evidence."
-      - "Under 10 seconds per CV on the public demo."
-      - "No CV files are stored; only scores and quotes, deleted after 24 hours."
+      - "Screens a CV against a job description and returns a verdict for each requirement with the quoted CV line as evidence (LangGraph pipeline, Gemini with Groq fallback)."
+      - "Verifies every quote in code against the CV text; a quote that is not found is discarded, so the score never rests on invented evidence."
+      - "Completes a screening in under 10 seconds and stores no CV files."
     what_failed: "TODO(content): one thing that failed and why"
     links:
       live: https://mizan-hr.vercel.app
@@ -96,8 +101,8 @@ projects:
     role: "Graduation project, Fayoum University (grade: Excellent)"
     stack: [YOLO, TensorFlow Lite, OpenCV, Flask]
     results:
-      - "Two specialized YOLO models (classification + counterfeit detection) reaching 95% mAP."
-      - "Converted to TensorFlow Lite for low-latency on-device inference; OpenCV preprocessing extracts forensic features for verification."
+      - "Trained two YOLO models for banknote classification and counterfeit detection, reaching 95% mAP."
+      - "Converted the models to TensorFlow Lite for real-time inference on the phone, with OpenCV preprocessing and a Flask backend."
     what_failed: "TODO(content): one thing that failed and why"
     links:
       repo: "TODO(content): repo URL or none"
@@ -109,9 +114,9 @@ projects:
     role: "Capstone project at NTI"
     stack: [Qwen2.5-VL 7B, OWLv2, SAM2, OpenCV homography, Stable Diffusion inpainting]
     results:
-      - "Qwen2.5-VL for scene understanding, OWLv2 for surface detection, SAM2 for pixel-accurate foreground tracking across all frames."
-      - "Perspective homography warps the ad to the surface angle; Stable Diffusion inpainting blends edges on walls, screens, grass and tables."
-      - "Runs on limited GPUs through 4-bit quantization and sequential VRAM management."
+      - "Combined Qwen2.5-VL for scene understanding, OWLv2 for surface detection and SAM2 for foreground tracking across all frames."
+      - "Warped each ad to the surface angle with perspective homography and blended its edges with Stable Diffusion inpainting."
+      - "Ran the pipeline on limited GPUs through 4-bit quantization and sequential VRAM management."
     what_failed: "TODO(content): one thing that failed and why"
     links:
       repo: "TODO(content)"
@@ -122,7 +127,7 @@ projects:
     role: "TODO(content)"
     stack: ["TODO(content): LLM / image model / framework"]
     results:
-      - "Autonomous routing between story writing and image prompt engineering; narrative themes become visual scene descriptors; interactive dashboard renders story and images together."
+      - "Routes work between a story-writing agent and an image-prompt agent without manual steps, and shows the story and its images together in an interactive dashboard."
     what_failed: "TODO(content)"
     links:
       repo: "TODO(content)"
@@ -157,14 +162,16 @@ education:
 
 # Grouped, no percentages, no logos. Only things used in the projects above.
 skills:
-  - group: Agents and LLM systems
-    items: [LLMs, Agentic AI, RAG, LangGraph, LangChain, Prompt engineering]
+  - group: LLM and agents
+    items: [LLMs, Agentic AI, RAG, LangGraph, LangChain, Prompt engineering, Vector databases]
+  - group: Voice AI
+    items: [Vapi, ElevenLabs, Speech-to-text, Text-to-speech]
   - group: Computer vision
-    items: [Object detection, Segmentation, Vision Transformers, Multimodal models, YOLO, SAM2, OpenCV]
+    items: [Object detection, Segmentation, YOLO, SAM2, Vision Transformers, Multimodal models, OpenCV]
   - group: Deep learning
-    items: [PyTorch, TensorFlow, CNNs, GANs, Diffusion models]
+    items: [PyTorch, TensorFlow, TensorFlow Lite, CNNs, GANs, Diffusion models]
   - group: Backend and deployment
-    items: [FastAPI, Flask, Docker, REST APIs, PostgreSQL, Redis, MongoDB, MySQL]
+    items: [Python, FastAPI, Flask, REST APIs, Docker, Docker Compose, Git, PostgreSQL, Redis, MongoDB, MySQL]
 
 certificates:
   - name: Advanced Computer Vision Track
@@ -175,4 +182,4 @@ languages:
   - language: Arabic
     level: Native
   - language: English
-    level: "TODO(content): level"
+    level: B2

@@ -235,19 +235,23 @@ html.lenis body {
   overflow: hidden;
 }
 
-/* Print (the /cv page and the CI-generated PDF): white paper, black ink, no chrome. */
+/* Print (the /cv page and the CI-generated PDF): white paper, black ink, no chrome.
+   The site header, footer, skip link and background carry print:hidden themselves; a
+   selector on header/footer here once hid the CV's own name and contact line. */
 @media print {
   @page {
     size: A4;
-    margin: 16mm;
+    margin: 13mm 15mm;
+  }
+  /* The dark scheme paints the page margins near-black in the PDF; paper is light. */
+  html {
+    color-scheme: light !important;
   }
   html,
   body {
     background: #fff !important;
     color: #000 !important;
   }
-  header[class],
-  footer[class],
   .print\:hidden {
     display: none !important;
   }
@@ -256,6 +260,6 @@ html.lenis body {
     text-decoration: none;
   }
   .text-dim {
-    color: #444 !important;
+    color: #333 !important;
   }
 }

@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 */
 export function SiteHeader() {
   return (
-    <header className="w-full">
+    <header className="w-full print:hidden">
       <div className="mx-auto flex h-16 max-w-site items-center justify-between px-4 md:px-8">
         <Link
           href="/"
