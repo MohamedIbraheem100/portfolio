@@ -4,8 +4,8 @@
 Personal portfolio of **Mohamed Ibrahim, AI Engineer** (agentic systems + applied computer vision).
 Spelling is **Mohamed Ibrahim** everywhere (site, CV, JSON-LD, domain). Domain: `mohamedibrahim.is-a.dev`
 (registered 2026-11-09 via is-a-dev/register#60489; also live at `mohamedibrahim-ai.vercel.app`).
-Every settled decision and its reason lives in `docs/decisions.md` (D1-D37). Read it before proposing a change.
-Status: W0, W1, W5, W3 and W2 (AI Twin) are shipped. Next: W4 Vision Lab + Cashy.
+Every settled decision and its reason lives in `docs/decisions.md` (D1-D39). Read it before proposing a change.
+Status: W0, W1, W5, W3 and W2 (AI Twin) are shipped. W4 is the Cashy live demo (D39). Next: W6 case studies, W7 polish.
 Audience: recruiters and hiring managers. Goal: in 10 seconds they know who he is; in 1 minute they
 have *used* something he built.
 
@@ -149,13 +149,13 @@ Cache 24h by SHA-256 of the normalized JD; **the JD text is never stored** (pane
 If Mizan is down: plain message + Download CV, never a fake score.
 Footer line: "Powered by Mizan, which I built." + link to the case study.
 
-### Vision Lab — `/lab` (all client-side)
-- Webcam detection/segmentation/pose with pretrained YOLO11n ONNX. Label it clearly as pretrained;
-  the skill shown is edge deployment. Show FPS, inference ms, backend (WebGPU/WASM).
-- Cashy: his currency classifier + counterfeit detector exported to ONNX. Camera-first, with a framing
-  guide, curated sample images right beside it, and a "Not confident" state below threshold.
-- COOP/COEP headers on `/lab` only (multi-threaded WASM); never site-wide.
-- Models hosted on a Hugging Face model repo, loaded lazily on "Run", cached by the browser.
+### Cashy live (replaces the Vision Lab, D38/D39)
+- No `/lab` page and no pretrained demo: only the owner's own model, inside Cashy's scene in Selected Work.
+- "Try it live": four curated samples or the visitor's photo; the denomination model (YOLOv8s, ONNX, about 22 MB)
+  runs in the browser (onnxruntime-web, WASM, Web Worker), loaded on the first try. Box + confidence; below 0.5
+  it says "Not confident".
+- The model file is hosted on Hugging Face; its address is `NEXT_PUBLIC_CASHY_MODEL_URL`. Empty = no demo shown.
+- The counterfeit model is not shown publicly (it failed on the owner's own samples, D39).
 - Images never leave the device; say so in one line.
 
 ### Media projects

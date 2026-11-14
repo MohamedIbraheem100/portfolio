@@ -1,6 +1,8 @@
 import { ButtonLink } from "@/components/ui/button-link";
+import { CashyLive } from "@/components/work/cashy-live";
 import { DetectOnView } from "@/components/work/detect-on-view";
 import { SceneVideo } from "@/components/work/scene-video";
+import { CASHY_MODEL_URL } from "@/lib/cashy";
 import { isTodo, type Project, type Resume } from "@/lib/resume";
 
 /*
@@ -105,6 +107,14 @@ function Scene({ project, index }: { project: Project; index: number }) {
         )}
       </div>
 
+      {/* Cashy's visual is the model itself, running in the browser (only when its file has an address). */}
+      {project.slug === "cashy" && CASHY_MODEL_URL && (
+        <div className={`md:col-span-7 ${flip ? "md:order-1" : ""}`}>
+          <DetectOnView label="cashy · live demo">
+            <CashyLive modelUrl={CASHY_MODEL_URL} />
+          </DetectOnView>
+        </div>
+      )}
       {visual && (
         <figure className={`md:col-span-7 ${flip ? "md:order-1" : ""}`}>
           <DetectOnView

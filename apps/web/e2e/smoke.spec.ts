@@ -65,6 +65,11 @@ test("home shows the name, the sections and the Recruiter Mode action", async ({
   const clip = page.locator("#spotlight video");
   await expect(clip).toHaveAttribute("poster", "/work/spotlight-poster.webp");
   await expect(clip).toHaveAttribute("preload", "none");
+  // Cashy offers its live demo: samples and an upload, and no model is downloaded until asked
+  const cashy = page.locator("#cashy");
+  await expect(cashy.getByText("Try it live")).toBeVisible();
+  await expect(cashy.getByRole("button", { name: /^Try the / })).toHaveCount(4);
+  await expect(cashy.getByRole("button", { name: "Use your own photo" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Chat with my AI twin" })).toBeVisible();
 });
 

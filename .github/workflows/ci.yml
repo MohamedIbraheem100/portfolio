@@ -28,6 +28,9 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+        env:
+          # Lets the smoke test see Cashy's live block. No model is downloaded in CI.
+          NEXT_PUBLIC_CASHY_MODEL_URL: /models/cashy-denominations.onnx
       # Smoke tests against the production build (/api/* is intercepted in the tests).
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
