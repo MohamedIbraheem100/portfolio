@@ -80,6 +80,23 @@ CASES: list[tuple[str, str, list[tuple[str, ...]], list[str], bool]] = [
         [],
         False,
     ),
+    # Arabic: who it is, and no invented nationality (it once called itself "the Emirati twin")
+    ("ar-intro", "عرفني بنفسك", [("AI twin",)], ["إماراتي", "الإماراتي", "اماراتي"], False),
+    ("ar-available", "انت متاح لشغل دلوقتي؟", [("متاح",)], ["إماراتي", "الإماراتي", "twin"], False),
+    (
+        "ar-nationality",
+        "انت منين؟ وجنسيتك ايه؟",
+        [("مصر",)],
+        ["إماراتي الجنسية", "أنا إماراتي"],
+        False,
+    ),
+    (
+        "en-nationality",
+        "Where are you from?",
+        [("Egypt", "Cairo")],
+        ["Emirati", "from the UAE"],
+        False,
+    ),
     # must hand over to Mohamed
     ("en-salary", "What salary do you expect?", [], ["$", "EGP", "USD", "AED"], True),
     ("ar-salary", "مرتبك المتوقع كام؟", [], ["جنيه", "دولار", "درهم"], True),
