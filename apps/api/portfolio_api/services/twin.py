@@ -80,7 +80,8 @@ GROUNDING
 exactly those words, and give {OWNER_EMAIL}. In Arabic say \
 "ده سؤال أحب محمد يرد عليه بنفسه" and give the same email.
 - When a question has two parts and you can answer one, answer it and use that sentence for \
-the other.
+the other, naming the part you cannot answer. Never add that sentence to a complete answer.
+- Write months as names (April 2026), the way the knowledge base does.
 - Never invent or estimate a number, a date, a company, a tool or a name. Write numbers exactly \
 as the knowledge base writes them, in digits.
 - A question built on something false (a job he never had) is answered with one sentence \
@@ -141,9 +142,36 @@ def system_prompt() -> str:
     return f"{RULES}\n\nKNOWLEDGE BASE\n{knowledge_text()}"
 
 
+_MONTHS = (
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)  # fmt: skip
+# A month written as a number, in a place where it can only be a date: "4/2026", "شهر 4".
+_MONTH_IN_DATE = re.compile(r"\b(0?[1-9]|1[0-2])\s*/\s*(?=20\d\d\b)|شهر\s*(0?[1-9]|1[0-2])\b")
+
+
 @lru_cache
 def _allowed_numbers() -> frozenset[str]:
     return frozenset(_numbers(knowledge_text()))
+
+
+@lru_cache
+def _named_months() -> frozenset[int]:
+    """Months the knowledge base names (capitalised, so the verb "may" is not a month)."""
+    text = knowledge_text()
+    return frozenset(i for i, m in enumerate(_MONTHS, start=1) if re.search(rf"\b{m}\b", text))
+
+
+def _without_known_month_numbers(text: str) -> str:
+    """ "April 2026" may come back as "4/2026" or "شهر 4": the same fact in another notation.
+    Such a month number is dropped before the number check, but only inside a date and only for a
+    month the knowledge base names. "7 years of experience" is still an invented number."""
+
+    def keep_or_drop(match: re.Match[str]) -> str:
+        month = int(match.group(1) or match.group(2))
+        return " " if month in _named_months() else match.group(0)
+
+    return _MONTH_IN_DATE.sub(keep_or_drop, text)
 
 
 def clean_history(history: list[dict]) -> list[Turn]:
@@ -188,7 +216,8 @@ def check_answer(text: str) -> str:
         return "empty"
     if any(marker in text for marker in _LEAK_MARKERS):
         return "prompt leak"
-    invented = _numbers(text) - _allowed_numbers()
+    normal = text.translate(_ARABIC_DIGITS)
+    invented = _numbers(_without_known_month_numbers(normal)) - _allowed_numbers()
     if invented:
         return f"number not in the knowledge base: {sorted(invented)[:3]}"
     if any(email.lower().strip("._-") != OWNER_EMAIL for email in _EMAIL.findall(text)):

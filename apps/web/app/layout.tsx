@@ -56,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <SiteField />
         <SiteHeader />
-        <main id="main" className="flex flex-1 flex-col">
+        <main id="main" className="flex flex-1 flex-col overflow-x-clip">
           {children}
         </main>
         <SiteFooter />

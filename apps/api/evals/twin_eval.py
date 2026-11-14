@@ -124,7 +124,9 @@ CASES: list[tuple[str, str, list[tuple[str, ...]], list[str], bool]] = [
 
 def judge(case, result) -> list[str]:
     _, _, must, must_not, expect_fallback = case
-    text, problems = result.text, []
+    # Arabic-Indic digits count as the same number.
+    text = result.text.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
+    problems = []
     low = text.lower()
     for options in must:
         if not any(o.lower() in low for o in options):

@@ -287,3 +287,29 @@ Folded into CLAUDE.md once the list is complete.
 - `evals/twin_eval.py` runs 20 questions (facts, hand-overs, false premises, injections, Arabic and
   English) through the same code path against the real models. First run: 20 of 20, 1.1 s average.
   It costs quota, so it is run by hand before a release, not in CI.
+
+## D36. The AI twin is a floating chat, with its quota protected (W2, 2026-11-14)
+- Owner's call: not a page. A chat that follows the visitor across pages and scroll, like a
+  messenger, so they can ask something and check it against the page (Experience, the CV). It sits
+  in the root layout; the conversation is kept in `sessionStorage`, so it survives page changes and
+  a reload and is gone when the tab closes. Nothing is stored on the server.
+- Desktop: a panel in the lower right corner, the page stays usable. Phone: a sheet over the lower
+  72% of the screen; the page above it still scrolls.
+- Only a small launcher ships with every page ("Chat with my AI twin"); the panel's code is fetched
+  on first open. The hero's secondary action is now "Ask my AI twin" (D21) and opens the same chat;
+  "Download CV" left the hero (the CV button is in the header on every page).
+- Four starter questions chosen with the owner so that one click says who he is: a 30-second
+  introduction, what runs in production, the project he is proudest of and his part, availability
+  and roles.
+- Waiting shows a turning amber ring and a shimmering "Thinking", no clock (D32).
+- Quota and abuse, on top of D10 (Origin, session token, 30 messages a visitor a day, global cap):
+  - a first question (no history) is answered from a 24 h cache keyed by the hash of the question
+    and the prompt, so starter and repeated questions cost no model call, and a change to the
+    knowledge base empties the cache by itself;
+  - at most 8 messages a minute per visitor;
+  - follow-ups and replaced answers are never cached.
+- The number check accepts a month written as a number only inside a date ("4/2026", "شهر 4") and
+  only for a month the knowledge base names. Found by the live eval: a correct Arabic answer was
+  being replaced because it wrote April as 4. "7 years of experience" is still rejected.
+- Fixed in passing: the hero's glow overflowed the page sideways near 1024 px; `main` now clips it.
+- Live eval after these changes: 20 of 20, 1.3 s average, no answer replaced.

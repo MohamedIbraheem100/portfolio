@@ -6,6 +6,7 @@ Source: my interview answers (2026-11-14).
 
 - Am I available? Yes, I am open to a new role now.
 - Notice period? 14 days.
+- When can I start? After my notice period: 14 days from accepting an offer.
 - Current job? AI Engineer at H.Hunters, full-time and remote.
 - Full-time or freelance? Full-time is what I am looking for first. Freelance work is also fine.
 - Remote, on-site or hybrid? I am flexible: any of the three works for me.

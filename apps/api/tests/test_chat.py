@@ -192,6 +192,8 @@ def test_groq_reasoning_models_get_a_short_reasoning_budget():
         "Mizan is live at mizan-hr.vercel.app.",
         f"You can reach me at {twin.OWNER_EMAIL}.",
         "I studied from 2020 to 2024.",
+        "I was there from 4/2026 to 07/2026.",  # April and July, written as numbers
+        "اشتغلت هناك من شهر 4 لشهر 7 سنة 2026.",
     ],
 )
 def test_answers_that_stay_inside_the_knowledge_base_pass(text):
@@ -202,6 +204,8 @@ def test_answers_that_stay_inside_the_knowledge_base_pass(text):
     ("text", "reason"),
     [
         ("I have 5 years of experience.", "number"),
+        ("I joined in 6/2026.", "number"),  # June is not a month the knowledge base names
+        ("I have 7 years of experience.", "number"),  # 7 is July only inside a date
         ("Accuracy was 99.2% in production.", "number"),
         ("I expect 3000 dollars a month.", "number"),
         ("Write to me at someone@else.com.", "foreign email"),
