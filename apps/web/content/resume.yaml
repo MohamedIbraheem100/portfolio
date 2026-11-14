@@ -13,8 +13,7 @@ basics:
   role: AI Engineer
   # One sentence under the name in the hero. Restates CV facts only; wording awaiting owner approval.
   headline: "I build agentic systems and computer vision pipelines that run in production: a bilingual agentic chatbot that answers in under a second, and a banknote counterfeit detector at 95% mAP."
-  # The Profile paragraph of the CV (/cv, the PDF, /cv.txt). Drafted 2026-11-14 from CV facts and
-  # the owner's H.Hunters work sessions; wording awaiting his approval.
+  # The Profile paragraph of the CV (/cv, the PDF, /cv.txt). Approved by the owner 2026-11-14.
   profile: "AI Engineer building LLM agents, voice AI and computer vision systems for production. Currently responsible for the AI services of a restaurant-management platform at H.Hunters, including an Arabic voice agent that takes phone orders. Previously delivered a bilingual RAG chatbot with sub-second responses and a banknote counterfeit detector at 95% mAP."
   location: New Cairo, Egypt
   email: mohamed.abdelwahed.ai@gmail.com
@@ -23,7 +22,7 @@ basics:
     linkedin: https://www.linkedin.com/in/mohamed-ibrahim100
     site: https://mohamedibrahim.is-a.dev
   # Relocation / remote / availability, in his words. Also feeds faq.md for the twin.
-  availability: "TODO(content): availability, remote, relocation"
+  availability: "Open to a new role now. Full-time first; freelance work is also welcome. Remote, on-site or hybrid. Open to relocating to the Gulf or Europe."
 
 # Verified numbers only. Each one is rendered inside its project's scene, never as a stat row.
 highlights:
@@ -40,9 +39,8 @@ experience:
     start: "2026-08"
     end: null            # null = present
     location: "TODO(content)"
-    # Drafted 2026-11-14 from the owner's own H.Hunters work sessions and his description of the role
-    # (dashboard AI services, insights, recommendations, call agent, maintenance, server move).
-    # Kept at the level he can explain in an interview; wording awaits his confirmation.
+    # From the owner's own H.Hunters work sessions and his description of the role; approved by him
+    # 2026-11-14. Kept at the level he can explain in an interview.
     impact:
       - "Own the AI services behind the restaurant owner dashboard in production (Python, FastAPI): AI insights and recommendations, customer activity segmentation, usage and cost analytics, and knowledge-base management."
       - "Built an Arabic voice agent that takes restaurant phone orders over Vapi and ElevenLabs: an LLM-driven dialogue state machine handles ordering and confirmation, with per-restaurant call routing and session state in Redis."
@@ -58,7 +56,7 @@ experience:
       - "Designed and deployed a production agentic RAG chatbot that serves customers in Arabic and English (LangGraph, FastAPI)."
       - "Reduced inference and retrieval latency by more than 30%, bringing responses under one second."
       - "Built the backend on PostgreSQL, Redis and a vector database, with authentication, rate limiting and conversation persistence."
-      - "Automated CRM updates from chatbot conversations."
+      - "Added an appointment-booking path in which the agent calls the CRM and emails the details to the company."
   - company: National Telecommunication Institute (NTI)
     title: AI Engineering Trainee, Advanced Computer Vision
     start: "2026-01"
@@ -82,14 +80,14 @@ projects:
     name: Mizan
     flagship: true
     one_liner: "AI recruiter: evidence-based CV screening against a job description. Decision support, never auto-reject."
-    role: "TODO(content): solo / team, your part"
+    role: Solo project
     stack: [Next.js, FastAPI, LangGraph, Gemini, Groq, Neon Postgres, Upstash Redis, Vercel]
     # Results below are stated on mizan-hr.vercel.app and enforced in its code (verify.py).
     results:
       - "Screens a CV against a job description and returns a verdict for each requirement with the quoted CV line as evidence (LangGraph pipeline, Gemini with Groq fallback)."
       - "Verifies every quote in code against the CV text; a quote that is not found is discarded, so the score never rests on invented evidence."
       - "Completes a screening in under 10 seconds and stores no CV files."
-    what_failed: "TODO(content): one thing that failed and why"
+    what_failed: "For three pull requests the CI was green while the app crashed on start inside its Docker container: the CI built the image but never ran it. The CI now runs the image and its migration."
     links:
       live: https://mizan-hr.vercel.app
       repo: https://github.com/MohamedIbraheem100/mizan-hr
@@ -97,12 +95,13 @@ projects:
   - slug: cashy
     name: Cashy
     one_liner: "Mobile app that identifies Egyptian banknotes and flags counterfeits in real time, with two YOLO models at 95% mAP."
-    # TODO(content): team size and his part (five-person team per the ChatGPT draft; confirm)
-    role: "Graduation project, Fayoum University (grade: Excellent)"
-    stack: [YOLO, TensorFlow Lite, OpenCV, Flask]
+    # Interview 2026-11-14: team of five, two on the AI; his part was model training and the
+    # link between the models, the backend and the Flutter app. 95% mAP is the project's result.
+    role: "Graduation project, team of five (grade: A+)"
+    stack: [YOLO, TensorFlow Lite, OpenCV, Flask, Flutter]
     results:
-      - "Trained two YOLO models for banknote classification and counterfeit detection, reaching 95% mAP."
-      - "Converted the models to TensorFlow Lite for real-time inference on the phone, with OpenCV preprocessing and a Flask backend."
+      - "Trained the two YOLO models for banknote classification and counterfeit detection on about 8,000 images, reaching 95% mAP."
+      - "Connected the models to the Flutter app through a Flask backend; they run on the phone as TensorFlow Lite with OpenCV preprocessing."
     what_failed: "TODO(content): one thing that failed and why"
     links:
       repo: "TODO(content): repo URL or none"
@@ -110,13 +109,14 @@ projects:
   - slug: spotlight
     name: SpotLight
     one_liner: "Inserts advertisements into existing video (films, series, football) so they sit on real surfaces instead of floating."
-    # TODO(content): team size and his part
-    role: "Capstone project at NTI"
-    stack: [Qwen2.5-VL 7B, OWLv2, SAM2, OpenCV homography, Stable Diffusion inpainting]
+    # Interview 2026-11-14: NTI graduation project, team of five. His part: scene understanding
+    # (frames, Qwen, bounding box from the prompt), the Gradio UI, and fitting the models in memory.
+    role: "NTI graduation project, team of five"
+    stack: [Qwen2.5-VL 7B, OWLv2, SAM2, OpenCV homography, Stable Diffusion inpainting, Gradio]
     results:
-      - "Combined Qwen2.5-VL for scene understanding, OWLv2 for surface detection and SAM2 for foreground tracking across all frames."
-      - "Warped each ad to the surface angle with perspective homography and blended its edges with Stable Diffusion inpainting."
-      - "Ran the pipeline on limited GPUs through 4-bit quantization and sequential VRAM management."
+      - "Built the scene-understanding stage: the video is split into frames, Qwen2.5-VL analyses the scene and the surface named in the prompt gets a bounding box."
+      - "Fitted the pipeline on two T4 GPUs: quantized Qwen2.5-VL to 4-bit with bitsandbytes (about 4 GB) and assigned each model to a GPU with caching."
+      - "Built the Gradio interface. The team's pipeline then tracks the foreground with SAM2, warps the ad with perspective homography and blends it with Stable Diffusion inpainting."
     what_failed: "TODO(content): one thing that failed and why"
     links:
       repo: "TODO(content)"
@@ -139,7 +139,7 @@ projects:
     stack: [LangGraph, FastAPI, Redis, PostgreSQL, Vector database]
     results:
       - "30%+ lower inference and retrieval latency, sub-second responses."
-      - "Authentication, rate limiting and API defenses; conversation persistence; CRM automation."
+      - "The agent routes each message to general chat, retrieval or appointment booking; booking calls the CRM and emails the details to the company."
     what_failed: "TODO(content)"
     links: {}
     demo: case-study
@@ -156,22 +156,22 @@ projects:
 
 education:
   - institution: Fayoum University
-    degree: "BSc in Computers and Artificial Intelligence (graduation project Cashy, grade: Excellent)"
+    degree: "BSc in Computers and Artificial Intelligence (graduation project Cashy, grade: A+)"
     start: "2020"
     end: "2024"
 
 # Grouped, no percentages, no logos. Only things used in the projects above.
 skills:
   - group: LLM and agents
-    items: [LLMs, Agentic AI, RAG, LangGraph, LangChain, Prompt engineering, Vector databases]
+    items: [LLMs, Agentic AI, RAG, Tool calling, LangGraph, LangChain, Prompt engineering, Vector databases]
   - group: Voice AI
     items: [Vapi, ElevenLabs, Speech-to-text, Text-to-speech]
   - group: Computer vision
     items: [Object detection, Segmentation, YOLO, SAM2, Vision Transformers, Multimodal models, OpenCV]
   - group: Deep learning
-    items: [PyTorch, TensorFlow, TensorFlow Lite, CNNs, GANs, Diffusion models]
+    items: [PyTorch, TensorFlow, TensorFlow Lite, Model quantization, CNNs, GANs, Diffusion models]
   - group: Backend and deployment
-    items: [Python, FastAPI, Flask, REST APIs, Docker, Docker Compose, Git, PostgreSQL, Redis, MongoDB, MySQL]
+    items: [Python, FastAPI, Flask, REST APIs, Docker, Docker Compose, Git, Azure DevOps, PostgreSQL, Redis, MongoDB, MySQL]
 
 certificates:
   - name: Advanced Computer Vision Track

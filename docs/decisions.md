@@ -241,3 +241,23 @@ Folded into CLAUDE.md once the list is complete.
 - Phone number: the repo, the site and the published PDF are public, so the number stays out of all
   three. `CV_PHONE=... node scripts/print-cv.mjs` prints a private copy with the number for sending
   to an employer directly; it lives only in the git-ignored `assets-src/`.
+
+## D34. The AI twin's knowledge base, first version (W2, 2026-11-14)
+- `apps/api/knowledge/` holds the eight files of CLAUDE.md, written in the first person from the
+  owner's interview of 2026-11-14, `resume.yaml`, and Mizan's own decision records. The ChatGPT
+  outline was used only to decide what to ask; nothing unconfirmed from it went in (the call-centre
+  job and the "freelance" line are left out until he confirms them).
+- Team projects say "team" and state his part (Cashy: model training and the link to the Flutter
+  app; SpotLight: scene understanding, the Gradio UI, fitting the models on two T4 GPUs). Teammates
+  are never named, in the knowledge base or anywhere in the public repo.
+- `voice.md` is about writing style, not audio. It carries a few sentences he actually wrote and
+  short example replies; the twin answers in text.
+- `faq.md` ends with "Not in the knowledge base yet": the questions the twin must hand to Mohamed
+  instead of guessing (notice period, salary, visa status, how the 30% at AL Master was measured).
+- One number was corrected against the source: Mizan's batch of 10 CVs went from 220 s to about
+  90 s (ADR-0003 in the Mizan repo), not 70 s.
+- `tests/test_knowledge.py` runs in CI before any model reads the files: all eight exist, no
+  placeholder or outline marker, no phone number, no emoji, and every percentage is also in
+  `resume.yaml`.
+- `resume.yaml` gained the same facts (availability, team sizes, his part, what failed in Mizan,
+  the booking path that calls the CRM); the CV still prints to two pages.
