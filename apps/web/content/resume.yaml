@@ -13,6 +13,9 @@ basics:
   role: AI Engineer
   # One sentence under the name in the hero. Restates CV facts only; wording awaiting owner approval.
   headline: "I build agentic systems and computer vision pipelines that run in production: a bilingual agentic chatbot that answers in under a second, and a banknote counterfeit detector at 95% mAP."
+  # The Profile paragraph of the CV (/cv, the PDF, /cv.txt). Drafted 2026-11-14 from CV facts and
+  # the owner's H.Hunters work sessions; wording awaiting his approval.
+  profile: "AI Engineer who ships LLM agents and computer vision to production. At H.Hunters I own the AI services behind a restaurant-management platform's dashboard and built its Gulf Arabic phone-ordering voice agent. Earlier work: a bilingual agentic RAG chatbot that answers in under a second, and on-device banknote counterfeit detection at 95% mAP."
   location: New Cairo, Egypt
   email: mohamed.abdelwahed.ai@gmail.com
   links:
@@ -37,12 +40,15 @@ experience:
     start: "2026-08"
     end: null            # null = present
     location: "TODO(content)"
-    # Impact, not duties. 3-4 lines with numbers. Architecture and decisions only,
-    # no client data (CLAUDE.md: H.Hunters case study rules).
+    # Drafted 2026-11-14 from the owner's own H.Hunters work sessions (dashboard AI services,
+    # call agent) and his statement that he moved the services to the new server; the wording
+    # and the numbers await his confirmation. His AI work only, no client data.
     impact:
-      - "TODO(content): achievement with number"
-      - "TODO(content): achievement with number"
-    public_notes: "TODO(content): what may NOT be said publicly"
+      - "Own the AI services behind the owner dashboard of an AI restaurant-management platform (insights and recommendations, usage and cost, knowledge base, voice ordering): a Python FastAPI modular monolith in production, including its maintenance."
+      - "Built an inbound phone-ordering voice agent in Gulf Arabic on Vapi and ElevenLabs: one shared number routes each call to its restaurant from the SIP Diversion header, with call state in Redis across workers, per-call rate limits and a daily spend cap."
+      - "Ran the pre-launch acceptance testing of the dashboard's AI services against production: found and closed 16 defects across 6 pull requests."
+      - "Moved the AI services to a new production server (self-hosted Docker Compose)."
+    public_notes: "Owner, 2026-11-14: his AI work and any AI feature may be described. Not the company's business, not client data."
   - company: AL Master IT Solutions
     title: AI Engineer
     start: "2026-04"
@@ -164,7 +170,7 @@ skills:
   - group: Deep learning
     items: [PyTorch, TensorFlow, CNNs, GANs, Diffusion models]
   - group: Backend and deployment
-    items: [FastAPI, Flask, Docker, REST APIs, PostgreSQL, Redis, MongoDB, MySQL]
+    items: [Python, FastAPI, Flask, Docker, REST APIs, PostgreSQL, Redis, MongoDB, MySQL]
 
 certificates:
   - name: Advanced Computer Vision Track
@@ -175,4 +181,4 @@ languages:
   - language: Arabic
     level: Native
   - language: English
-    level: "TODO(content): level"
+    level: B2

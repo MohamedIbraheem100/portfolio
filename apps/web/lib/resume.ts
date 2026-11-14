@@ -22,6 +22,7 @@ const Basics = z.object({
   name: text,
   role: text,
   headline: text,
+  profile: text.optional(), // the CV's Profile paragraph; falls back to the headline
   location: text,
   email: text,
   links: z.object({ github: link, linkedin: link, site: link }),

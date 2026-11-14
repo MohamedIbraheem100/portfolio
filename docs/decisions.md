@@ -234,5 +234,10 @@ Folded into CLAUDE.md once the list is complete.
   not repeated in the CV's Projects section. `/cv.txt` (what Mizan screens) is unchanged.
 - Site chrome hides itself in print with `print:hidden`; a smoke test prints the page in the browser
   and checks that the name and email are visible and the chrome is not.
-- Still the owner's to supply: H.Hunters achievements, English level, whether the phone number goes
-  on the PDF, whether "Python" is added to the skills.
+- Content added the same day from the owner's answers: H.Hunters impact lines (drafted from his own
+  work sessions, his AI work only; wording and numbers await his confirmation), English B2, "Python"
+  in the skills, and `basics.profile`, a Profile paragraph for the CV that is separate from the hero
+  headline.
+- Phone number: the repo, the site and the published PDF are public, so the number stays out of all
+  three. `CV_PHONE=... node scripts/print-cv.mjs` prints a private copy with the number for sending
+  to an employer directly; it lives only in the git-ignored `assets-src/`.

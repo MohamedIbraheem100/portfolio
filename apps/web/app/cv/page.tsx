@@ -129,6 +129,7 @@ export default async function CvPage() {
   const { basics } = resume;
   const pending = process.env.NODE_ENV === "production" ? [] : pendingContent(resume);
   // Work done for an employer is told once, under Experience; a project needs its one-liner.
+  const profile = show(basics.profile) ? basics.profile : show(basics.headline) ? basics.headline : null;
   const projects = resume.projects.filter((p) => p.demo !== "case-study" && show(p.one_liner));
   const skills = resume.skills.filter((g) => g.items.some(show));
   const education = resume.education.filter((e) => show(e.institution));
@@ -153,7 +154,9 @@ export default async function CvPage() {
             <p className="mt-2 font-display text-h3 font-medium text-dim print:mt-[2pt] print:text-[11.5pt] print:leading-[1.3] print:tracking-normal">
               {basics.role}
             </p>
-            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-small text-dim print:mt-[4pt] print:justify-center print:gap-x-[12pt] print:gap-y-0 print:text-[10pt]">
+            <ul
+              data-cv-contact
+              className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-small text-dim print:mt-[4pt] print:justify-center print:gap-x-[12pt] print:gap-y-0 print:text-[10pt]">
               {contact.map((c) => (
                 <li key={c.label}>{c.href ? <a href={c.href}>{c.label}</a> : c.label}</li>
               ))}
@@ -166,9 +169,9 @@ export default async function CvPage() {
           </div>
         </div>
 
-        {show(basics.headline) && (
+        {profile && (
           <Section title="Profile">
-            <p className="max-w-prose print:max-w-none">{basics.headline}</p>
+            <p className="max-w-prose print:max-w-none">{profile}</p>
           </Section>
         )}
 
