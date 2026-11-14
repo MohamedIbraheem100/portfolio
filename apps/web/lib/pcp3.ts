@@ -38,7 +38,9 @@ export function parsePcp3(buf: ArrayBuffer): PointData {
 }
 
 export async function loadPoints(url: string, signal?: AbortSignal): Promise<PointData> {
-  const res = await fetch(url, { signal, credentials: "omit" });
+  // Default credentials on purpose: they match the <link rel="preload" crossorigin> written by the
+  // head script, so the preloaded file is used. With "omit" the browser downloaded it twice.
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Could not load ${url}: ${res.status}`);
   return parsePcp3(await res.arrayBuffer());
 }

@@ -226,7 +226,7 @@ export function RecruiterPanel({ email }: { email: string | null }) {
                 warm();
                 setJd(ex.text);
               }}
-              className="underline decoration-dim/50 underline-offset-4 hover:text-amber hover:decoration-amber"
+              className="min-h-6 underline decoration-dim/50 underline-offset-4 hover:text-amber hover:decoration-amber"
             >
               {ex.label}
             </button>

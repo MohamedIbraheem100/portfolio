@@ -8,7 +8,7 @@ import { CV_PDF_URL } from "@/lib/cv";
 
 export const metadata: Metadata = {
   title: "CV",
-  description: `CV of ${site.name}, ${site.role}.`,
+  description: `CV of ${site.name}, ${site.role}: experience, projects, skills and education, with a PDF download.`,
 };
 
 /*
