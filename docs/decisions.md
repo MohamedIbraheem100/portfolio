@@ -345,3 +345,17 @@ Folded into CLAUDE.md once the list is complete.
   refusals too, and the live eval gained the four starter questions and a stricter check for
   speaking about him instead of as him: 28 of 28. A prompt change empties the answer cache by
   itself, so the cached third-person answer disappears with this release.
+
+## D38. SpotLight's video lives in the repo; the Lab becomes a demo inside Cashy's scene (2026-11-14)
+- SpotLight's scene now plays the owner's clip (one scene in four views: foreground mask, wall mask,
+  two results). It is re-encoded to H.264, 848x480, no audio, 1.1 MB, with a 30 KB poster, and
+  shipped from `public/work/`. That departs from "videos on Hugging Face" on purpose: a clip of
+  about 1 MB is lighter than the point files already in the repo, and it needs no second host.
+  Larger videos still go to Hugging Face. The WebM encode came out bigger than the MP4 and was
+  dropped. The video is muted, loops, loads nothing until it is near the viewport, plays only while
+  on screen, and never starts by itself under reduced motion.
+- The clip shows footage from a TV series and real brand advertisements used as test material.
+  Kept by the owner's choice as a demonstration of the project.
+- Owner's calls for W4: no pretrained YOLO demo (not his work), and no `/lab` page. Cashy gets a
+  "try it live" inside its scene: upload or pick a photo, get the denomination and the
+  genuine/counterfeit result from his own two models, in the browser.
