@@ -135,19 +135,62 @@ def test_a_rate_limited_model_is_skipped_until_its_wait_is_over():
     assert hits[0].endswith("googleapis.com")  # and it is tried again afterwards
 
 
-def test_broken_cut_or_empty_answers_fall_through_to_the_next_model():
-    replies = iter(
-        [
-            httpx.Response(503, json={}),
-            httpx.Response(
-                200,
-                json={"choices": [{"finish_reason": "length", "message": {"content": "cut of"}}]},
-            ),
-            groq_ok("whole answer"),
-        ]
-    )
-    reply = gateway(lambda request: next(replies)).complete("S", [Turn("user", "q")])
-    assert (reply.text, reply.model) == ("whole answer", "openai/gpt-oss-120b")
+def test_a_hiccup_is_retried_once_on_the_same_model():
+    replies = iter([httpx.Response(503, json={}), gemini_ok("second try")])
+    hosts = []
+
+    def handler(request):
+        hosts.append(request.url.host)
+        return next(replies)
+
+    reply = gateway(handler).complete("S", [Turn("user", "q")])
+    assert (reply.text, reply.provider) == ("second try", "gemini")
+    assert len(hosts) == 2 and all(h.endswith("googleapis.com") for h in hosts)
+
+
+def test_a_model_that_keeps_failing_gives_way_to_the_next_and_sits_out_briefly():
+    now = [0.0]
+    hosts = []
+
+    def handler(request):
+        hosts.append(request.url.host)
+        return (
+            httpx.Response(503, json={})
+            if "googleapis" in request.url.host
+            else groq_ok("from the next one")
+        )
+
+    gw = gateway(handler, clock=lambda: now[0])
+    reply = gw.complete("S", [Turn("user", "q")])
+    assert (reply.text, reply.model) == ("from the next one", "qwen/qwen3.8-27b")
+    assert hosts.count("generativelanguage.googleapis.com") == 2  # the try and its one retry
+    now[0] = 7.0  # a hiccup sidelines the model for seconds, not for a minute
+    hosts.clear()
+    gw.complete("S", [Turn("user", "q")])
+    assert hosts[0].endswith("googleapis.com")
+
+
+def test_a_rate_limit_is_not_retried_and_gemini_says_when_to_come_back_in_the_body():
+    now = [0.0]
+    hosts = []
+
+    def handler(request):
+        hosts.append(request.url.host)
+        if "googleapis" in request.url.host:
+            return httpx.Response(429, json={"error": {"details": [{"retryDelay": "17s"}]}})
+        return groq_ok()
+
+    gw = gateway(handler, clock=lambda: now[0])
+    gw.complete("S", [Turn("user", "q")])
+    assert hosts.count("generativelanguage.googleapis.com") == 1  # no retry on a rate limit
+    now[0] = 16.0
+    hosts.clear()
+    gw.complete("S", [Turn("user", "q")])
+    assert hosts == ["api.groq.com"]  # still waiting out the 17 s
+    now[0] = 18.0
+    hosts.clear()
+    gw.complete("S", [Turn("user", "q")])
+    assert hosts[0].endswith("googleapis.com")
 
 
 def test_when_every_model_is_out_the_caller_is_told():

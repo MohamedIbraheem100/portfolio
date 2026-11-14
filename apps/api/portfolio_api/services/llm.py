@@ -32,8 +32,11 @@ OPENAI_STYLE_URLS = {
 }
 DEFAULT_MODELS = {"groq": "openai/gpt-oss-120b", "openai": "gpt-4.1-mini"}
 
-RATE_LIMIT_COOLDOWN_S = 30.0  # when a 429 carries no retry-after
-BROKEN_COOLDOWN_S = 20.0  # 5xx, timeout, empty answer: try again soon
+RATE_LIMIT_COOLDOWN_S = 15.0  # when a 429 says nothing about when to come back
+# A hiccup (5xx, timeout, empty or cut answer) is retried once at once, and if it happens again
+# the model sits out only briefly: the fallback models take about three messages a minute in
+# total, so sidelining the first model for long is what makes the twin say "busy".
+BROKEN_COOLDOWN_S = 6.0
 CONFIG_COOLDOWN_S = 600.0  # 400/401/403/404: a key or model name is wrong; do not hammer it
 MAX_COOLDOWN_S = 120.0
 
@@ -43,9 +46,10 @@ class AllProvidersBusy(RuntimeError):
 
 
 class ProviderFailed(RuntimeError):
-    def __init__(self, reason: str, cooldown_s: float) -> None:
+    def __init__(self, reason: str, cooldown_s: float, transient: bool = False) -> None:
         super().__init__(reason)
         self.cooldown_s = cooldown_s
+        self.transient = transient  # worth one immediate retry
 
 
 @dataclass(frozen=True)
@@ -89,8 +93,17 @@ def parse_providers(chain: str, gemini_model: str) -> list[ProviderSpec]:
 
 
 def _retry_after(response: httpx.Response) -> float:
+    """How long a rate-limited model asks us to wait: the Retry-After header (Groq, OpenAI) or
+    the `retryDelay` inside the error body (Gemini, e.g. "17s")."""
+    raw = response.headers.get("retry-after", "")
+    if not raw:
+        try:
+            details = response.json().get("error", {}).get("details", [])
+            raw = next((d["retryDelay"] for d in details if "retryDelay" in d), "")
+        except (ValueError, AttributeError, TypeError):
+            raw = ""
     try:
-        return min(max(float(response.headers.get("retry-after", "")), 1.0), MAX_COOLDOWN_S)
+        return min(max(float(str(raw).rstrip("s")), 1.0), MAX_COOLDOWN_S)
     except ValueError:
         return RATE_LIMIT_COOLDOWN_S
 
@@ -100,7 +113,7 @@ def _failure(response: httpx.Response) -> ProviderFailed:
     if status == 429:
         return ProviderFailed("rate limited", _retry_after(response))
     if status >= 500:
-        return ProviderFailed(f"upstream {status}", BROKEN_COOLDOWN_S)
+        return ProviderFailed(f"upstream {status}", BROKEN_COOLDOWN_S, transient=True)
     return ProviderFailed(f"rejected {status}", CONFIG_COOLDOWN_S)
 
 
@@ -110,7 +123,7 @@ class LLMGateway:
         specs: list[ProviderSpec],
         keys: dict[str, str],
         client: httpx.Client | None = None,
-        timeout_s: float = 20.0,
+        timeout_s: float = 12.0,
         clock: Any = time.monotonic,
     ) -> None:
         # A provider without a key is not part of the ladder (OpenAI is optional).
@@ -135,18 +148,27 @@ class LLMGateway:
         for spec in self.specs:
             if not self._available(spec):
                 continue
-            try:
-                text = self._call(spec, system, turns, max_tokens)
-            except ProviderFailed as exc:
-                log.warning("llm %s failed: %s (cooldown %.0fs)", spec.name, exc, exc.cooldown_s)
-                self._cool(spec, exc.cooldown_s)
-                continue
-            except httpx.HTTPError as exc:
-                log.warning("llm %s unreachable: %s", spec.name, type(exc).__name__)
-                self._cool(spec, BROKEN_COOLDOWN_S)
-                continue
-            return LLMReply(text=text, provider=spec.provider, model=spec.model)
+            text = self._attempt(spec, system, turns, max_tokens, retry=True)
+            if text is not None:
+                return LLMReply(text=text, provider=spec.provider, model=spec.model)
         raise AllProvidersBusy("no model available")
+
+    def _attempt(
+        self, spec: ProviderSpec, system: str, turns: list[Turn], max_tokens: int, retry: bool
+    ) -> str | None:
+        """One model, with a single immediate retry for a hiccup. None = move to the next one."""
+        try:
+            return self._call(spec, system, turns, max_tokens)
+        except ProviderFailed as exc:
+            reason, cooldown, transient = str(exc), exc.cooldown_s, exc.transient
+        except httpx.HTTPError as exc:
+            reason, cooldown, transient = type(exc).__name__, BROKEN_COOLDOWN_S, True
+        if transient and retry:
+            log.warning("llm %s hiccup: %s (retrying once)", spec.name, reason)
+            return self._attempt(spec, system, turns, max_tokens, retry=False)
+        log.warning("llm %s failed: %s (cooldown %.0fs)", spec.name, reason, cooldown)
+        self._cool(spec, cooldown)
+        return None
 
     def _call(self, spec: ProviderSpec, system: str, turns: list[Turn], max_tokens: int) -> str:
         if spec.provider == "gemini":
@@ -178,7 +200,7 @@ class LLMGateway:
         parts = candidate.get("content", {}).get("parts", [])
         text = "".join(p.get("text", "") for p in parts).strip()
         if not text:
-            raise ProviderFailed("empty answer", BROKEN_COOLDOWN_S)
+            raise ProviderFailed("empty answer", BROKEN_COOLDOWN_S, transient=True)
         return text
 
     def _openai_style(
@@ -209,7 +231,7 @@ class LLMGateway:
             raise ProviderFailed(f"finish {choice.get('finish_reason')}", BROKEN_COOLDOWN_S)
         text = (choice.get("message", {}).get("content") or "").strip()
         if not text:
-            raise ProviderFailed("empty answer", BROKEN_COOLDOWN_S)
+            raise ProviderFailed("empty answer", BROKEN_COOLDOWN_S, transient=True)
         return text
 
 
