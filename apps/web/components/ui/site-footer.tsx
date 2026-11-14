@@ -17,7 +17,7 @@ export async function SiteFooter() {
   ].filter((l): l is { label: string; href: string } => Boolean(l.href));
 
   return (
-    <footer className="mt-auto w-full border-t border-phosphor/10">
+    <footer className="mt-auto w-full border-t border-phosphor/10 print:hidden">
       <div className="mx-auto flex max-w-site flex-col gap-3 px-4 py-8 text-small text-dim md:flex-row md:items-center md:justify-between md:px-8">
         <p>
           {site.name}, {year}
