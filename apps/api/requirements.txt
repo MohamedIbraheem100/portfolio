@@ -4,5 +4,5 @@ uvicorn[standard]==0.37.0
 pydantic==2.14.3
 pydantic-settings==2.10.1
 
-# Outbound HTTP (Upstash REST, Mizan, Resend). LLM provider SDKs are added in W2.
+# Outbound HTTP (Upstash REST, Mizan, Resend, and the LLM APIs: no provider SDKs).
 httpx==0.28.1

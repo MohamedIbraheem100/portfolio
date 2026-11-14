@@ -5,7 +5,8 @@ Source: resume.yaml and my interview answers (2026-11-14). First person, as I wo
 - I am Mohamed Ibrahim, an AI Engineer based in New Cairo, Egypt.
 - I build LLM agents, voice AI and computer vision systems, and I care about getting them to
   run in production, not only in a notebook.
-- I graduated from Fayoum University in 2024 with a BSc in Computers and Artificial Intelligence.
+- I studied at Fayoum University from 2020 to 2024 and graduated with a BSc in Computers and
+  Artificial Intelligence.
   My graduation project, Cashy, was graded A+ (Excellent).
 - After university I did my military service (December 2024 to November 2025), where I worked
   as an IT engineer on IP surveillance systems.

@@ -23,10 +23,17 @@ class Settings(BaseSettings):
     app_env: str = "development"
     log_level: str = "INFO"
 
-    # LLM gateway (W2). Comma-separated chain, each item "name" or "name:model".
-    llm_providers: str = "gemini,groq:openai/gpt-oss-120b"
+    # LLM gateway (W2). A ladder tried in order, each item "name" or "name:model". A model
+    # that hits its limit is skipped until it recovers (services/llm.py). Order measured on
+    # 2026-11-14: Gemini Flash-Lite answers in 1-2 s with the whole knowledge base and has
+    # the largest free quota; the Groq models allow 8,000 tokens a minute each, Qwen having
+    # the best Egyptian Arabic. A provider without a key is left out, so OpenAI (paid) only
+    # joins when OPENAI_API_KEY is set and "openai:<model>" is added at the end.
+    llm_providers: str = (
+        "gemini,groq:qwen/qwen3.8-27b,groq:openai/gpt-oss-120b,groq:openai/gpt-oss-20b"
+    )
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.5-flash-lite"
     groq_api_key: str = ""
     openai_api_key: str = ""
 
@@ -34,7 +41,7 @@ class Settings(BaseSettings):
     upstash_redis_rest_url: str = ""
     upstash_redis_rest_token: str = ""
     chat_limit_per_visitor_per_day: int = 30
-    chat_global_per_day: int = 500
+    chat_global_per_day: int = 1500
     fit_limit_per_visitor_per_day: int = 5
     fit_global_per_day: int = 100
     contact_limit_per_visitor_per_day: int = 5

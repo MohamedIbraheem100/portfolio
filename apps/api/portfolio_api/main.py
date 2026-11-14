@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from portfolio_api import __version__
 from portfolio_api.core.config import get_settings
 from portfolio_api.core.logging import configure_logging
-from portfolio_api.routes import contact, fit, health, session
+from portfolio_api.routes import chat, contact, fit, health, session
 
 configure_logging(get_settings().log_level)
 
@@ -31,3 +31,4 @@ app.include_router(health.router)
 app.include_router(session.router)
 app.include_router(contact.router)
 app.include_router(fit.router)
+app.include_router(chat.router)
