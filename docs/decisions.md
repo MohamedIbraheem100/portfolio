@@ -409,3 +409,15 @@ Folded into CLAUDE.md once the list is complete.
 - Live eval: 32 questions (Arabic introduction, availability, nationality in both languages added),
   32 of 32. A prompt change empties the answer cache, so the wrong cached answer goes with this
   release.
+
+## D42. One hiccup must not make the twin say "busy" (2026-11-15)
+- Seen on production: six questions in a row, the fifth and sixth answered "the service has reached
+  its limit". Gemini itself was fine (nine calls in a row passed locally right after). What the
+  ladder did wrong: any failure of the first model, even a single slow or 503 response, put it aside
+  for 20 to 30 seconds, and the three fallback models together take about three messages a minute
+  (8,000 tokens a minute each, about 5,000 a message). So one hiccup emptied the ladder. Which
+  failure it was could not be read: the function logs are in Vercel.
+- Now a hiccup (5xx, timeout, empty answer) is retried once at once on the same model; if it fails
+  again the model sits out 6 seconds. A real rate limit is not retried and waits exactly as long as
+  the provider says (Retry-After header, or `retryDelay` in Gemini's error body), else 15 seconds.
+  The per-call timeout is 12 seconds instead of 20.
