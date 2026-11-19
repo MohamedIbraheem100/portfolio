@@ -4,8 +4,8 @@
 Personal portfolio of **Mohamed Ibrahim, AI Engineer** (agentic systems + applied computer vision).
 Spelling is **Mohamed Ibrahim** everywhere (site, CV, JSON-LD, domain). Domain: `mohamedibrahim.is-a.dev`
 (registered 2026-11-09 via is-a-dev/register#60489; also live at `mohamedibrahim-ai.vercel.app`).
-Every settled decision and its reason lives in `docs/decisions.md` (D1-D42). Read it before proposing a change.
-Status: W0, W1, W5, W3 and W2 (AI Twin) are shipped. W4 is the Cashy live demo (D39). Next: W6 case studies, W7 polish.
+Every settled decision and its reason lives in `docs/decisions.md` (D1-D43). Read it before proposing a change.
+Status: W0, W1, W5, W3 and W2 (AI Twin) are shipped. W4 (Cashy live, D39) and W7 polish are shipped. No case-study pages (D43). Only the optional W8 is left.
 Audience: recruiters and hiring managers. Goal: in 10 seconds they know who he is; in 1 minute they
 have *used* something he built.
 
@@ -83,7 +83,7 @@ Type (all OFL, self-hosted via next/font/local, subsetted; total first-load font
 Layout: left-aligned, asymmetric 12-col grid (hero: 5 cols text / 7 cols 3D). Projects are full-width
 scenes where the demo or video *is* the visual; not card grids. Designed **mobile-first**; on phones the
 hero reads name, role, headline, CTAs, then the portrait (D29). A **CV** button sits in the header on every page. No "Proof" stat row: every verified
-number lives as a sentence inside its project scene, and the hero sentence carries the two strongest.
+number lives as a sentence inside its project scene. The hero sentence carries no numbers (D43).
 
 ## Motion rules
 Every motion speaks one of two languages: the **detector** (amber: boxes, brackets, sweeps, rules) or the
@@ -163,9 +163,9 @@ SpotLight: before/after drag slider over real output video + pipeline breakdown 
 → homography → SD inpainting). Storytelling Agent: video synced with an agent graph that highlights the
 active node. Videos: H.264 + WebM, ≤ 8 MB, poster, muted autoplay only when in view. No GIFs.
 
-### Case studies `/work/[slug]` (MDX)
-Problem → constraints → architecture → key decisions (incl. what failed) → results with numbers → demo.
-H.Hunters: architecture and decisions only, no code or client data.
+### Case studies
+Dropped (D43): one page holds every project as a scene; there is no `/work/[slug]`.
+H.Hunters: his AI work only, no code or client data.
 
 ### /cv
 Printable CV rendered from `resume.yaml`; CI prints it to PDF with Playwright on every change.
