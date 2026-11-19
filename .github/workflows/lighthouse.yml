@@ -21,7 +21,7 @@ concurrency:
 jobs:
   lighthouse:
     name: Lighthouse (mobile, local build)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: Playwright has no Chromium build for ubuntu-latest (26.04) yet
     defaults:
       run:
         working-directory: apps/web
