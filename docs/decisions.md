@@ -431,3 +431,10 @@ Folded into CLAUDE.md once the list is complete.
   which described the counterfeit model that is not shown publicly (D39).
 - Source links added for SpotLight and the Storytelling Agent (both repositories are public).
 - With that the plan is complete except the optional W8 scroll morph.
+- Share image redone (owner: "the best one you can make"): the point-cloud portrait with the amber
+  detection box on the head, the name, the role, the hero sentence and the domain. It is served as
+  a static JPEG (`app/opengraph-image.jpg`, 130 KB): the rendered PNG was 520 KB because of the
+  dithered portrait, and WhatsApp drops previews above roughly 300 KB. Its generator stays at
+  `/og/source` (not indexed); after a change to the design or the sentence, render it and save it
+  over the JPEG.
+- Hero sentence after two rounds: "I teach machines to see, speak and act. Then I ship them."
