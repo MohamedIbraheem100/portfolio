@@ -421,3 +421,13 @@ Folded into CLAUDE.md once the list is complete.
   again the model sits out 6 seconds. A real rate limit is not retried and waits exactly as long as
   the provider says (Retry-After header, or `retryDelay` in Gemini's error body), else 15 seconds.
   The per-call timeout is 12 seconds instead of 20.
+
+## D43. One page of projects, a new hero sentence (2026-11-19)
+- Owner's call: no page per project. The portfolio is the home page (all projects as scenes) and
+  the CV page, so nobody gets lost. `/work/[slug]`, MDX case studies and per-page OG images are
+  dropped from the plan; the one site-wide OG image stays.
+- Hero sentence, his brief: catchy, who he is and what he does, no numbers and no project names
+  (the projects are right below it). It replaces the sentence that carried the two numbers, one of
+  which described the counterfeit model that is not shown publicly (D39).
+- Source links added for SpotLight and the Storytelling Agent (both repositories are public).
+- With that the plan is complete except the optional W8 scroll morph.

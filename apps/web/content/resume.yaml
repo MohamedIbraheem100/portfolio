@@ -11,8 +11,9 @@
 basics:
   name: Mohamed Ibrahim
   role: AI Engineer
-  # One sentence under the name in the hero. Restates CV facts only; wording awaiting owner approval.
-  headline: "I build agentic systems and computer vision pipelines that run in production: a bilingual agentic chatbot that answers in under a second, and a banknote counterfeit detector at 95% mAP."
+  # One sentence under the name in the hero. Owner's brief (2026-11-19): catchy, says who he is and
+  # what he does, no numbers and no project names (the projects are right below).
+  headline: "I build AI that leaves the notebook: agents that talk to customers, voice agents that take the order, and vision models that run on a phone."
   # The Profile paragraph of the CV (/cv, the PDF, /cv.txt). Approved by the owner 2026-11-14.
   profile: "AI Engineer building LLM agents, voice AI and computer vision systems for production. Currently responsible for the AI services of a restaurant-management platform at H.Hunters, including an Arabic voice agent that takes phone orders. Previously delivered a bilingual RAG chatbot with sub-second responses and a banknote counterfeit detector at 95% mAP."
   location: New Cairo, Egypt
@@ -122,7 +123,7 @@ projects:
       - "Built the Gradio interface. The team's pipeline then tracks the foreground with SAM2, warps the ad with perspective homography and blends it with Stable Diffusion inpainting."
     what_failed: "TODO(content): one thing that failed and why"
     links:
-      repo: "TODO(content)"
+      repo: https://github.com/MohamedIbraheem100/SpotLight-Advertisement
     demo: video
   - slug: storytelling-agent
     name: Storytelling Agent
@@ -133,7 +134,7 @@ projects:
       - "Routes work between a story-writing agent and an image-prompt agent without manual steps, and shows the story and its images together in an interactive dashboard."
     what_failed: "TODO(content)"
     links:
-      repo: "TODO(content)"
+      repo: https://github.com/MohamedIbraheem100/storyTeller-AGENT
     demo: video
   - slug: al-master-chatbot
     name: Bilingual agentic chatbot (AL Master)
